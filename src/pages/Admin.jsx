@@ -932,36 +932,62 @@ export default function Admin() {
 
                   {/* Product assignment checklist */}
                   <div>
-                    <label className="font-sans text-xs font-semibold uppercase tracking-wider text-aura-dark block mb-2">
-                      Products Included in this Sale ({camp.productIds?.length || 0})
-                    </label>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+                    <div className="flex items-center justify-between mb-2">
+                      <label className="font-sans text-xs font-semibold uppercase tracking-wider text-aura-dark">
+                        Products Included in this Sale ({camp.productIds?.length || 0})
+                      </label>
+                      <span className="text-[10px] text-aura-muted">Click any item to toggle inclusion</span>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2.5">
                       {products.map((p) => {
                         const isIncluded = camp.productIds?.includes(p.id)
+                        const pImg = p.colors?.[0]?.images?.[0] || p.images?.[0] || 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=900&h=1200&fit=crop&q=85'
+
                         return (
                           <label
                             key={p.id}
-                            className={`flex items-center gap-2 p-2 rounded-lg border text-xs font-sans cursor-pointer transition-colors ${
-                              isIncluded ? 'bg-cream-50 border-aura-dark font-medium' : 'border-aura-dark/10 hover:border-aura-dark/30'
+                            className={`flex items-center justify-between gap-2.5 p-2.5 rounded-xl border text-xs font-sans cursor-pointer transition-all ${
+                              isIncluded
+                                ? 'bg-white border-aura-dark shadow-sm ring-1 ring-aura-dark/10'
+                                : 'bg-cream-50/70 border-aura-dark/15 hover:border-aura-dark/40 hover:bg-white'
                             }`}
                           >
-                            <input
-                              type="checkbox"
-                              checked={isIncluded}
-                              onChange={() => {
-                                const newIds = isIncluded
-                                  ? camp.productIds.filter((id) => id !== p.id)
-                                  : [...(camp.productIds || []), p.id]
-                                updateCampaigns(
-                                  settings.campaigns.map((c) =>
-                                    c.id === camp.id ? { ...c, productIds: newIds } : c
+                            <div className="flex items-center gap-2.5 min-w-0 flex-1">
+                              <input
+                                type="checkbox"
+                                checked={isIncluded}
+                                onChange={() => {
+                                  const newIds = isIncluded
+                                    ? camp.productIds.filter((id) => id !== p.id)
+                                    : [...(camp.productIds || []), p.id]
+                                  updateCampaigns(
+                                    settings.campaigns.map((c) =>
+                                      c.id === camp.id ? { ...c, productIds: newIds } : c
+                                    )
                                   )
-                                )
-                                showSaveSuccess()
-                              }}
-                              className="w-3.5 h-3.5 accent-aura-dark"
-                            />
-                            <span className="truncate">{p.name} (Rs. {p.price})</span>
+                                  showSaveSuccess()
+                                }}
+                                className="w-4 h-4 accent-aura-dark shrink-0 cursor-pointer"
+                              />
+
+                              <div className="flex items-center gap-2 min-w-0 flex-1">
+                                <span className={`truncate ${isIncluded ? 'text-aura-dark font-semibold' : 'text-aura-dark/85 font-medium'}`}>
+                                  {p.name}
+                                </span>
+
+                                {/* Small image after the name */}
+                                <img
+                                  src={pImg}
+                                  alt={p.name}
+                                  className="w-7 h-7 rounded-md object-cover border border-aura-dark/15 shrink-0 shadow-xs"
+                                />
+                              </div>
+                            </div>
+
+                            <span className="text-[11px] font-semibold text-aura-gold shrink-0">
+                              Rs. {Number(p.price).toLocaleString()}
+                            </span>
                           </label>
                         )
                       })}
