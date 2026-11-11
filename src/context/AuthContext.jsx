@@ -9,6 +9,18 @@ export function AuthProvider({ children }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Check for master admin session (works without Supabase)
+    if (localStorage.getItem('thrift-aura-admin-session') === 'master') {
+      setUser({
+        id: 'master-admin',
+        email: 'admin@thriftaura.com',
+        user_metadata: { full_name: 'Store Curator' },
+      })
+      setProfile({ id: 'master-admin', full_name: 'Store Curator', role: 'admin' })
+      setLoading(false)
+      return
+    }
+
     // Get initial Supabase session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null)
@@ -55,6 +67,7 @@ export function AuthProvider({ children }) {
   }
 
   async function signOut() {
+    localStorage.removeItem('thrift-aura-admin-session')
     setUser(null)
     setProfile(null)
     try {
@@ -65,7 +78,7 @@ export function AuthProvider({ children }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signUp, signIn, signOut }}>
+    <AuthContext.Provider value={{ user, profile, loading, signUp, signIn, signOut, setUser, setProfile }}>
       {children}
     </AuthContext.Provider>
   )

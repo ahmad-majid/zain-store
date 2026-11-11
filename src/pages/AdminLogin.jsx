@@ -10,7 +10,7 @@ export default function AdminLogin() {
   const [showPass, setShowPass] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
-  const { signIn, signOut, user, profile, loading: authLoading } = useAuth()
+  const { signIn, signOut, user, profile, loading: authLoading, setUser, setProfile } = useAuth()
   const navigate = useNavigate()
 
   // If already logged in as admin, go straight to dashboard
@@ -20,11 +20,33 @@ export default function AdminLogin() {
     }
   }, [user, profile, authLoading, navigate])
 
+  // ── Master admin credentials (works without Supabase setup) ──────────────
+  const MASTER_EMAIL    = 'admin@thriftaura.com'
+  const MASTER_PASSWORD = 'ThriftAura@2026'
+
   const handleSubmit = async (e) => {
     e.preventDefault()
     setLoading(true)
     setError('')
 
+    // 1️⃣ Check master credential first (always works, no Supabase required)
+    if (
+      form.email.trim().toLowerCase() === MASTER_EMAIL &&
+      form.password === MASTER_PASSWORD
+    ) {
+      localStorage.setItem('thrift-aura-admin-session', 'master')
+      setUser({
+        id: 'master-admin',
+        email: MASTER_EMAIL,
+        user_metadata: { full_name: 'Store Curator' },
+      })
+      setProfile({ id: 'master-admin', full_name: 'Store Curator', role: 'admin' })
+      navigate('/admin', { replace: true })
+      setLoading(false)
+      return
+    }
+
+    // 2️⃣ Fall back to real Supabase auth
     const { data, error: signInError } = await signIn(form.email, form.password)
 
     if (signInError) {
@@ -33,8 +55,6 @@ export default function AdminLogin() {
       return
     }
 
-    // After successful auth, check role — wait briefly for profile to load
-    // We re-fetch the profile from Supabase directly here for immediate check
     try {
       const { data: profileData } = await supabase
         .from('profiles')
@@ -45,12 +65,10 @@ export default function AdminLogin() {
       if (profileData?.role === 'admin') {
         navigate('/admin', { replace: true })
       } else {
-        // Not an admin — sign them out immediately
         await signOut()
         setError('Access denied. This account does not have admin privileges.')
       }
     } catch {
-      // Profiles table may not exist yet — deny access to be safe
       await signOut()
       setError('Unable to verify admin role. Please ensure the database schema is configured.')
     }
