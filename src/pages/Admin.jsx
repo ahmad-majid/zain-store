@@ -5,7 +5,7 @@ import { useStoreSettings } from '../context/StoreSettingsContext'
 import {
   Package, Megaphone, Sparkles, Navigation, Percent, Image, FolderTree, BookOpen,
   Plus, Trash2, Edit3, Save, RotateCcw, Check, Upload, ExternalLink, Video, Eye,
-  CheckCircle2, Flame, Tag, Layers
+  CheckCircle2, Flame, Tag, Layers, X
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -1205,12 +1205,13 @@ export default function Admin() {
                   <h3 className="font-serif text-2xl text-aura-dark">
                     {editProduct ? 'Edit Archival Piece' : 'Add New Archival Garment'}
                   </h3>
-                  <button onClick={() => setProductModal(false)} className="p-1 text-aura-muted hover:text-aura-dark">
+                  <button onClick={() => { setProductModal(false); setEditProduct(null) }} className="p-1 text-aura-muted hover:text-aura-dark">
                     <X size={20} />
                   </button>
                 </div>
 
                 <form
+                  key={editProduct?.id || 'new-product'}
                   onSubmit={(e) => {
                     e.preventDefault()
                     const form = e.target
@@ -1240,6 +1241,7 @@ export default function Admin() {
                     }
                     saveProduct(prodData)
                     setProductModal(false)
+                    setEditProduct(null)
                     showSaveSuccess()
                   }}
                   className="space-y-4 text-xs font-sans"
@@ -1381,7 +1383,7 @@ export default function Admin() {
                   </div>
 
                   <div className="flex justify-end gap-3 pt-4 border-t border-aura-dark/10">
-                    <button type="button" onClick={() => setProductModal(false)} className="btn-outline py-2.5 px-5 text-xs">
+                    <button type="button" onClick={() => { setProductModal(false); setEditProduct(null) }} className="btn-outline py-2.5 px-5 text-xs">
                       Cancel
                     </button>
                     <button type="submit" className="btn-primary py-2.5 px-6 text-xs">
