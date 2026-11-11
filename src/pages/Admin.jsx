@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from 'react'
+﻿import { useState, useRef, useEffect } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useStoreSettings } from '../context/StoreSettingsContext'
@@ -18,7 +18,7 @@ export default function Admin() {
   } = useStoreSettings()
 
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState('inventory') // inventory | announcement | hero | navigation | coupons | lookbook | categories | story
+  const [activeTab, setActiveTab] = useState('inventory')
   const [savedNotice, setSavedNotice] = useState(false)
 
   // Guard: only admins may access this page
@@ -35,6 +35,112 @@ export default function Admin() {
   const [couponModal, setCouponModal] = useState(false)
   const [lookbookModal, setLookbookModal] = useState(false)
   const [categoryModal, setCategoryModal] = useState(false)
+
+  // â”€â”€ Product form state (fully controlled, supports N colorways Ã— 4 images) â”€â”€
+  const BLANK_COLOR = () => ({ name: '', hex: '#b8860b', images: ['', '', '', ''] })
+  const BLANK_PRODUCT_FORM = {
+    name: '', description: '', price: '', original_price: '',
+    condition: 'Like New', category_id: '', sizes: 'XS, S, M, L, XL',
+    featured: false, colors: [BLANK_COLOR()],
+  }
+  const [productForm, setProductForm] = useState(BLANK_PRODUCT_FORM)
+  const [activeColorIdx, setActiveColorIdx] = useState(0)
+
+  const openAddProduct = () => {
+    setEditProduct(null)
+    setProductForm(BLANK_PRODUCT_FORM)
+    setActiveColorIdx(0)
+    setProductModal(true)
+  }
+
+  const openEditProduct = (p) => {
+    setEditProduct(p)
+    setProductForm({
+      name: p.name || '',
+      description: p.description || '',
+      price: p.price ?? '',
+      original_price: p.original_price ?? '',
+      condition: p.condition || 'Like New',
+      category_id: p.category_id || '',
+      sizes: p.sizes?.join(', ') || 'XS, S, M, L, XL',
+      featured: p.featured || false,
+      colors: p.colors?.length
+        ? p.colors.map((c) => ({
+            name: c.name || '',
+            hex: c.hex || '#b8860b',
+            images: [
+              c.images?.[0] || '',
+              c.images?.[1] || '',
+              c.images?.[2] || '',
+              c.images?.[3] || '',
+            ],
+          }))
+        : [BLANK_COLOR()],
+    })
+    setActiveColorIdx(0)
+    setProductModal(true)
+  }
+
+  const closeProductModal = () => {
+    setProductModal(false)
+    setEditProduct(null)
+  }
+
+  // Form field helpers
+  const setPF = (key, val) => setProductForm((p) => ({ ...p, [key]: val }))
+  const setColorField = (idx, key, val) =>
+    setProductForm((p) => ({
+      ...p,
+      colors: p.colors.map((c, i) => (i === idx ? { ...c, [key]: val } : c)),
+    }))
+  const setColorImage = (colorIdx, imgIdx, val) =>
+    setProductForm((p) => ({
+      ...p,
+      colors: p.colors.map((c, i) =>
+        i === colorIdx
+          ? { ...c, images: c.images.map((img, j) => (j === imgIdx ? val : img)) }
+          : c
+      ),
+    }))
+  const addColor = () => {
+    setProductForm((p) => ({ ...p, colors: [...p.colors, BLANK_COLOR()] }))
+    setActiveColorIdx(productForm.colors.length)
+  }
+  const removeColor = (idx) => {
+    if (productForm.colors.length === 1) return
+    setProductForm((p) => ({ ...p, colors: p.colors.filter((_, i) => i !== idx) }))
+    setActiveColorIdx((prev) => Math.max(0, prev - (idx <= prev ? 1 : 0)))
+  }
+
+  const handleSaveProduct = () => {
+    const pf = productForm
+    if (!pf.name.trim() || !pf.price) return
+    const prodData = {
+      id: editProduct?.id || `sp-${Date.now()}`,
+      name: pf.name.trim(),
+      description: pf.description.trim(),
+      price: parseFloat(pf.price),
+      original_price: pf.original_price ? parseFloat(pf.original_price) : null,
+      condition: pf.condition,
+      sizes: pf.sizes.split(',').map((s) => s.trim()).filter(Boolean),
+      featured: pf.featured,
+      category_id: pf.category_id,
+      categories: { name: pf.category_id },
+      colors: pf.colors.map((c) => ({
+        name: c.name || 'Original',
+        hex: c.hex || '#222',
+        images: [
+          c.images[0] || 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=900&h=1200&fit=crop&q=85',
+          c.images[1] || c.images[0] || 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=900&h=1200&fit=crop&q=85',
+          c.images[2] || c.images[0] || 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=900&h=1200&fit=crop&q=85',
+          c.images[3] || c.images[0] || 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=900&h=1200&fit=crop&q=85',
+        ],
+      })),
+    }
+    saveProduct(prodData)
+    closeProductModal()
+    showSaveSuccess()
+  }
 
   const showSaveSuccess = () => {
     setSavedNotice(true)
@@ -260,9 +366,9 @@ export default function Admin() {
           })}
         </div>
 
-        {/* ═══════════════════════════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             TAB 1: PRODUCTS INVENTORY & HOMEPAGE FEATURED SELECTION
-           ═══════════════════════════════════════════════════════════════ */}
+           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         {activeTab === 'inventory' && (
           <div className="space-y-6">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
@@ -273,10 +379,7 @@ export default function Admin() {
                 </p>
               </div>
               <button
-                onClick={() => {
-                  setEditProduct(null)
-                  setProductModal(true)
-                }}
+                onClick={openAddProduct}
                 className="btn-primary"
               >
                 <Plus size={15} />
@@ -344,10 +447,7 @@ export default function Admin() {
                         <td className="py-3 px-6 text-right">
                           <div className="flex items-center justify-end gap-2">
                             <button
-                              onClick={() => {
-                                setEditProduct(p)
-                                setProductModal(true)
-                              }}
+                              onClick={() => openEditProduct(p)}
                               className="p-1.5 hover:bg-cream-200 rounded-md text-aura-dark/70 hover:text-aura-dark"
                               title="Edit"
                             >
@@ -376,9 +476,9 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ═══════════════════════════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             TAB 2: ANNOUNCEMENT BAR CRM (ON/OFF & ITEMS)
-           ═══════════════════════════════════════════════════════════════ */}
+           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         {activeTab === 'announcement' && (
           <div className="glass-card rounded-2xl p-6 sm:p-10 border border-aura-dark/10 space-y-8">
             <div className="flex items-center justify-between pb-6 border-b border-aura-dark/10">
@@ -458,9 +558,9 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ═══════════════════════════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             TAB 3: HERO SECTION CRM (TEXT, CTAs, 3D FEATURED PIECE)
-           ═══════════════════════════════════════════════════════════════ */}
+           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         {activeTab === 'hero' && (
           <form onSubmit={handleSaveHero} className="glass-card rounded-2xl p-6 sm:p-10 border border-aura-dark/10 space-y-6">
             <div className="pb-4 border-b border-aura-dark/10">
@@ -490,7 +590,7 @@ export default function Admin() {
                 >
                   {products.map((p) => (
                     <option key={p.id} value={p.id}>
-                      {p.name} — Rs. {Number(p.price).toLocaleString()}
+                      {p.name} â€” Rs. {Number(p.price).toLocaleString()}
                     </option>
                   ))}
                 </select>
@@ -576,9 +676,9 @@ export default function Admin() {
           </form>
         )}
 
-        {/* ═══════════════════════════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             TAB 4: NAVBAR BUTTONS & CUSTOM SALE CAMPAIGNS
-           ═══════════════════════════════════════════════════════════════ */}
+           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         {activeTab === 'navigation' && (
           <div className="space-y-8">
             <div className="glass-card rounded-2xl p-6 sm:p-10 border border-aura-dark/10 space-y-6">
@@ -722,9 +822,9 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ═══════════════════════════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             TAB 5: DISCOUNT COUPONS CRM
-           ═══════════════════════════════════════════════════════════════ */}
+           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         {activeTab === 'coupons' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -785,9 +885,9 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ═══════════════════════════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             TAB 6: LOOKBOOK MOODBOARD (IMAGE OR VIDEO)
-           ═══════════════════════════════════════════════════════════════ */}
+           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         {activeTab === 'lookbook' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -907,9 +1007,9 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ═══════════════════════════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             TAB 7: DEPARTMENTS & CATEGORIES CRM
-           ═══════════════════════════════════════════════════════════════ */}
+           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         {activeTab === 'categories' && (
           <div className="space-y-6">
             <div className="flex justify-between items-center">
@@ -1037,9 +1137,9 @@ export default function Admin() {
           </div>
         )}
 
-        {/* ═══════════════════════════════════════════════════════════════
+        {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             TAB 8: OUR STORY SECTION (TEXT, STATS, PIC OR VIDEO)
-           ═══════════════════════════════════════════════════════════════ */}
+           â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         {activeTab === 'story' && (
           <form onSubmit={handleSaveStory} className="glass-card rounded-2xl p-6 sm:p-10 border border-aura-dark/10 space-y-6">
             <div className="pb-4 border-b border-aura-dark/10">
@@ -1191,212 +1291,338 @@ export default function Admin() {
           </form>
         )}
 
-        {/* ─── Add/Edit Product Modal ─── */}
+        {/* ─── Add/Edit Product Modal (Multi-Colorway) ─── */}
         <AnimatePresence>
           {productModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-aura-dark/60 backdrop-blur-sm">
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-aura-dark/70 backdrop-blur-sm">
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-cream-100 rounded-2xl border border-aura-gold/30 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto p-6 sm:p-8"
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                transition={{ duration: 0.2 }}
+                className="bg-cream-50 rounded-2xl border border-aura-gold/30 shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col"
               >
-                <div className="flex items-center justify-between pb-4 mb-6 border-b border-aura-dark/10">
-                  <h3 className="font-serif text-2xl text-aura-dark">
-                    {editProduct ? 'Edit Archival Piece' : 'Add New Archival Garment'}
-                  </h3>
-                  <button onClick={() => { setProductModal(false); setEditProduct(null) }} className="p-1 text-aura-muted hover:text-aura-dark">
-                    <X size={20} />
+                {/* Modal Header */}
+                <div className="flex items-center justify-between px-6 py-4 border-b border-aura-dark/10 shrink-0">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-aura-dark flex items-center justify-center">
+                      <Package size={15} className="text-aura-gold" />
+                    </div>
+                    <div>
+                      <h3 className="font-serif text-lg text-aura-dark leading-none">
+                        {editProduct ? 'Edit Archival Piece' : 'Add New Archival Garment'}
+                      </h3>
+                      <p className="font-sans text-[10px] text-aura-muted tracking-wider mt-0.5">
+                        {productForm.colors.length} colorway{productForm.colors.length !== 1 ? 's' : ''} · 4 angles each
+                      </p>
+                    </div>
+                  </div>
+                  <button onClick={closeProductModal} className="p-1.5 rounded-lg hover:bg-cream-200 text-aura-muted hover:text-aura-dark transition-colors">
+                    <X size={18} />
                   </button>
                 </div>
 
-                <form
-                  key={editProduct?.id || 'new-product'}
-                  onSubmit={(e) => {
-                    e.preventDefault()
-                    const form = e.target
-                    const prodData = {
-                      id: editProduct?.id || `sp-${Date.now()}`,
-                      name: form.name.value,
-                      description: form.description.value,
-                      price: parseFloat(form.price.value),
-                      original_price: form.original_price.value ? parseFloat(form.original_price.value) : null,
-                      condition: form.condition.value,
-                      sizes: form.sizes.value.split(',').map((s) => s.trim()),
-                      featured: form.featured.checked,
-                      category_id: form.category_id.value,
-                      categories: { name: form.category_id.value },
-                      colors: [
-                        {
-                          name: form.colorName.value || 'Original Shade',
-                          hex: form.colorHex.value || '#222',
-                          images: [
-                            form.img1.value || 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=900&h=1200&fit=crop&q=85',
-                            form.img2.value || form.img1.value,
-                            form.img3.value || form.img1.value,
-                            form.img4.value || form.img1.value,
-                          ],
-                        },
-                      ],
-                    }
-                    saveProduct(prodData)
-                    setProductModal(false)
-                    setEditProduct(null)
-                    showSaveSuccess()
-                  }}
-                  className="space-y-4 text-xs font-sans"
-                >
-                  <div>
-                    <label className="font-semibold uppercase tracking-wider block mb-1">Garment Title *</label>
-                    <input
-                      type="text"
-                      name="name"
-                      defaultValue={editProduct?.name}
-                      required
-                      placeholder="e.g. Distressed Painted Logo Tank Top"
-                      className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl"
-                    />
-                  </div>
+                {/* Scrollable Body */}
+                <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5 font-sans text-xs">
 
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="font-semibold uppercase tracking-wider block mb-1">Price (Rs.) *</label>
-                      <input
-                        type="number"
-                        name="price"
-                        defaultValue={editProduct?.price}
-                        required
-                        className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl"
-                      />
-                    </div>
-                    <div>
-                      <label className="font-semibold uppercase tracking-wider block mb-1">Original Price (Rs.)</label>
-                      <input
-                        type="number"
-                        name="original_price"
-                        defaultValue={editProduct?.original_price}
-                        className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="font-semibold uppercase tracking-wider block mb-1">Department</label>
-                      <select
-                        name="category_id"
-                        defaultValue={editProduct?.category_id || 'outerwear'}
-                        className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl"
-                      >
-                        {settings.categories?.map((c) => (
-                          <option key={c.slug} value={c.slug}>{c.name}</option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="font-semibold uppercase tracking-wider block mb-1">Condition</label>
-                      <select
-                        name="condition"
-                        defaultValue={editProduct?.condition || 'Like New'}
-                        className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl"
-                      >
-                        <option value="Like New">Like New</option>
-                        <option value="Excellent">Excellent</option>
-                        <option value="Good">Good</option>
-                        <option value="Fair">Fair</option>
-                      </select>
-                    </div>
-                  </div>
-
-                  <div>
-                    <label className="font-semibold uppercase tracking-wider block mb-1">Sizes (comma separated)</label>
-                    <input
-                      type="text"
-                      name="sizes"
-                      defaultValue={editProduct?.sizes?.join(', ') || 'S, M, L'}
-                      className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl"
-                    />
-                  </div>
-
-                  {/* Color Hangtag & 4 Angle Images */}
-                  <div className="p-4 rounded-xl bg-cream-200/60 border border-aura-dark/10 space-y-3">
-                    <p className="font-semibold text-aura-dark text-[11px] uppercase tracking-wider">
-                      Primary Colorway & 4 Photography Angles
+                  {/* ── Section 1: Basic Info ── */}
+                  <div className="rounded-xl bg-white border border-aura-dark/8 p-4 space-y-4">
+                    <p className="font-semibold text-[10px] uppercase tracking-[0.2em] text-aura-gold flex items-center gap-1.5">
+                      <Tag size={11} /> Basic Information
                     </p>
+
+                    <div>
+                      <label className="font-semibold uppercase tracking-wider block mb-1.5 text-aura-dark/80">
+                        Garment Title <span className="text-red-500">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={productForm.name}
+                        onChange={(e) => setPF('name', e.target.value)}
+                        placeholder="e.g. Archival Tailored Blazer"
+                        className="w-full px-3.5 py-2.5 bg-cream-50 border border-aura-dark/15 rounded-lg focus:outline-none focus:border-aura-gold transition-colors"
+                      />
+                    </div>
+
                     <div className="grid grid-cols-2 gap-3">
                       <div>
-                        <label className="text-[10px] text-aura-muted uppercase tracking-wider block mb-1">Color Name</label>
+                        <label className="font-semibold uppercase tracking-wider block mb-1.5 text-aura-dark/80">
+                          Price (Rs.) <span className="text-red-500">*</span>
+                        </label>
                         <input
-                          type="text"
-                          name="colorName"
-                          defaultValue={editProduct?.colors?.[0]?.name || 'Vintage Sand'}
-                          className="w-full px-3 py-2 bg-cream-50 border border-aura-dark/20 rounded-md"
+                          type="number"
+                          value={productForm.price}
+                          onChange={(e) => setPF('price', e.target.value)}
+                          placeholder="3400"
+                          className="w-full px-3.5 py-2.5 bg-cream-50 border border-aura-dark/15 rounded-lg focus:outline-none focus:border-aura-gold transition-colors"
                         />
                       </div>
                       <div>
-                        <label className="text-[10px] text-aura-muted uppercase tracking-wider block mb-1">Hangtag Color Hex</label>
+                        <label className="font-semibold uppercase tracking-wider block mb-1.5 text-aura-dark/80">Original Price (Rs.)</label>
                         <input
-                          type="color"
-                          name="colorHex"
-                          defaultValue={editProduct?.colors?.[0]?.hex || '#b8860b'}
-                          className="w-full h-9 rounded border border-aura-dark/20 cursor-pointer"
+                          type="number"
+                          value={productForm.original_price}
+                          onChange={(e) => setPF('original_price', e.target.value)}
+                          placeholder="9200"
+                          className="w-full px-3.5 py-2.5 bg-cream-50 border border-aura-dark/15 rounded-lg focus:outline-none focus:border-aura-gold transition-colors"
                         />
                       </div>
                     </div>
 
-                    <div className="space-y-2 pt-2">
-                      <p className="text-[10px] text-aura-muted uppercase tracking-wider">Angle 1 (Front View URL):</p>
-                      <input type="text" name="img1" defaultValue={editProduct?.colors?.[0]?.images?.[0]} placeholder="Front image URL" className="w-full px-3 py-1.5 bg-cream-50 border border-aura-dark/20 rounded-md font-mono text-[11px]" />
-
-                      <p className="text-[10px] text-aura-muted uppercase tracking-wider">Angle 2 (Profile View URL):</p>
-                      <input type="text" name="img2" defaultValue={editProduct?.colors?.[0]?.images?.[1]} placeholder="Profile image URL" className="w-full px-3 py-1.5 bg-cream-50 border border-aura-dark/20 rounded-md font-mono text-[11px]" />
-
-                      <p className="text-[10px] text-aura-muted uppercase tracking-wider">Angle 3 (Fabric Texture URL):</p>
-                      <input type="text" name="img3" defaultValue={editProduct?.colors?.[0]?.images?.[2]} placeholder="Texture image URL" className="w-full px-3 py-1.5 bg-cream-50 border border-aura-dark/20 rounded-md font-mono text-[11px]" />
-
-                      <p className="text-[10px] text-aura-muted uppercase tracking-wider">Angle 4 (Back / Silhouette URL):</p>
-                      <input type="text" name="img4" defaultValue={editProduct?.colors?.[0]?.images?.[3]} placeholder="Back image URL" className="w-full px-3 py-1.5 bg-cream-50 border border-aura-dark/20 rounded-md font-mono text-[11px]" />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="font-semibold uppercase tracking-wider block mb-1.5 text-aura-dark/80">Department</label>
+                        <select
+                          value={productForm.category_id}
+                          onChange={(e) => setPF('category_id', e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-cream-50 border border-aura-dark/15 rounded-lg focus:outline-none focus:border-aura-gold transition-colors"
+                        >
+                          <option value="">Select category…</option>
+                          {settings.categories?.map((c) => (
+                            <option key={c.slug} value={c.slug}>{c.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="font-semibold uppercase tracking-wider block mb-1.5 text-aura-dark/80">Condition</label>
+                        <select
+                          value={productForm.condition}
+                          onChange={(e) => setPF('condition', e.target.value)}
+                          className="w-full px-3.5 py-2.5 bg-cream-50 border border-aura-dark/15 rounded-lg focus:outline-none focus:border-aura-gold transition-colors"
+                        >
+                          <option value="Like New">Like New</option>
+                          <option value="Excellent">Excellent</option>
+                          <option value="Good">Good</option>
+                          <option value="Fair">Fair</option>
+                        </select>
+                      </div>
                     </div>
-                  </div>
 
-                  <div>
-                    <label className="font-semibold uppercase tracking-wider block mb-1">Description</label>
-                    <textarea
-                      name="description"
-                      rows={3}
-                      defaultValue={editProduct?.description}
-                      className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl"
-                    />
-                  </div>
+                    <div>
+                      <label className="font-semibold uppercase tracking-wider block mb-1.5 text-aura-dark/80">
+                        Available Sizes <span className="text-aura-muted font-normal normal-case">(comma separated)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={productForm.sizes}
+                        onChange={(e) => setPF('sizes', e.target.value)}
+                        placeholder="XS, S, M, L, XL"
+                        className="w-full px-3.5 py-2.5 bg-cream-50 border border-aura-dark/15 rounded-lg focus:outline-none focus:border-aura-gold transition-colors"
+                      />
+                    </div>
 
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="featured"
-                      name="featured"
-                      defaultChecked={editProduct?.featured}
-                      className="w-4 h-4 accent-aura-dark"
-                    />
-                    <label htmlFor="featured" className="font-semibold cursor-pointer">
-                      Feature on Homepage Highlights
+                    <div>
+                      <label className="font-semibold uppercase tracking-wider block mb-1.5 text-aura-dark/80">Description</label>
+                      <textarea
+                        value={productForm.description}
+                        onChange={(e) => setPF('description', e.target.value)}
+                        rows={3}
+                        placeholder="Describe the garment — fabric, era, styling notes…"
+                        className="w-full px-3.5 py-2.5 bg-cream-50 border border-aura-dark/15 rounded-lg focus:outline-none focus:border-aura-gold transition-colors resize-none"
+                      />
+                    </div>
+
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={productForm.featured}
+                        onChange={(e) => setPF('featured', e.target.checked)}
+                        className="w-4 h-4 accent-aura-dark rounded"
+                      />
+                      <span className="font-semibold text-aura-dark">Feature this piece on the homepage</span>
                     </label>
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-4 border-t border-aura-dark/10">
-                    <button type="button" onClick={() => { setProductModal(false); setEditProduct(null) }} className="btn-outline py-2.5 px-5 text-xs">
+                  {/* ── Section 2: Colorways ── */}
+                  <div className="rounded-xl bg-white border border-aura-dark/8 p-4 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <p className="font-semibold text-[10px] uppercase tracking-[0.2em] text-aura-gold flex items-center gap-1.5">
+                        <Layers size={11} /> Colorways &amp; Photography Angles
+                      </p>
+                      <button
+                        type="button"
+                        onClick={addColor}
+                        className="flex items-center gap-1.5 px-3 py-1.5 bg-aura-dark text-cream-50 rounded-lg text-[10px] font-semibold tracking-wider uppercase hover:bg-aura-gold hover:text-aura-dark transition-colors"
+                      >
+                        <Plus size={11} /> Add Colorway
+                      </button>
+                    </div>
+
+                    {/* Color tabs */}
+                    <div className="flex flex-wrap gap-2">
+                      {productForm.colors.map((c, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setActiveColorIdx(idx)}
+                          className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-[11px] font-semibold border transition-all ${
+                            activeColorIdx === idx
+                              ? 'bg-aura-dark text-cream-50 border-aura-dark shadow-md'
+                              : 'bg-cream-100 text-aura-dark/70 border-aura-dark/15 hover:border-aura-dark/40'
+                          }`}
+                        >
+                          <span
+                            className="w-3 h-3 rounded-full border border-black/10 shrink-0"
+                            style={{ background: c.hex || '#ccc' }}
+                          />
+                          {c.name || `Color ${idx + 1}`}
+                          {productForm.colors.length > 1 && (
+                            <span
+                              onClick={(e) => { e.stopPropagation(); removeColor(idx) }}
+                              className="ml-1 opacity-50 hover:opacity-100 hover:text-red-500 transition-opacity cursor-pointer"
+                            >
+                              <X size={10} />
+                            </span>
+                          )}
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Active color editor */}
+                    {productForm.colors[activeColorIdx] && (
+                      <motion.div
+                        key={activeColorIdx}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="space-y-4 pt-2"
+                      >
+                        {/* Color name + hex */}
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <label className="font-semibold uppercase tracking-wider block mb-1.5 text-aura-dark/80">Color Name</label>
+                            <input
+                              type="text"
+                              value={productForm.colors[activeColorIdx].name}
+                              onChange={(e) => setColorField(activeColorIdx, 'name', e.target.value)}
+                              placeholder="e.g. Vintage Camel"
+                              className="w-full px-3.5 py-2.5 bg-cream-50 border border-aura-dark/15 rounded-lg focus:outline-none focus:border-aura-gold transition-colors"
+                            />
+                          </div>
+                          <div>
+                            <label className="font-semibold uppercase tracking-wider block mb-1.5 text-aura-dark/80">Hangtag Color</label>
+                            <div className="flex items-center gap-2">
+                              <input
+                                type="color"
+                                value={productForm.colors[activeColorIdx].hex}
+                                onChange={(e) => setColorField(activeColorIdx, 'hex', e.target.value)}
+                                className="h-10 w-14 rounded-lg border border-aura-dark/15 cursor-pointer p-0.5 bg-cream-50"
+                              />
+                              <input
+                                type="text"
+                                value={productForm.colors[activeColorIdx].hex}
+                                onChange={(e) => setColorField(activeColorIdx, 'hex', e.target.value)}
+                                placeholder="#b8860b"
+                                className="flex-1 px-3 py-2.5 bg-cream-50 border border-aura-dark/15 rounded-lg font-mono text-[11px] focus:outline-none focus:border-aura-gold transition-colors"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 4 image slots */}
+                        <div>
+                          <p className="font-semibold uppercase tracking-wider mb-2 text-aura-dark/80">
+                            4 Photography Angles
+                            <span className="ml-2 font-normal text-aura-muted normal-case tracking-normal">— paste image URLs</span>
+                          </p>
+                          <div className="space-y-2.5">
+                            {[
+                              { label: 'Front / Hero', emoji: '📸' },
+                              { label: 'Side / Profile', emoji: '👤' },
+                              { label: 'Fabric / Detail', emoji: '🔍' },
+                              { label: 'Back / Styled', emoji: '✨' },
+                            ].map(({ label, emoji }, imgIdx) => (
+                              <div key={imgIdx} className="flex items-center gap-2.5">
+                                <span className="text-sm shrink-0 w-6 text-center">{emoji}</span>
+                                <div className="flex-1 relative">
+                                  <input
+                                    type="url"
+                                    value={productForm.colors[activeColorIdx].images[imgIdx]}
+                                    onChange={(e) => setColorImage(activeColorIdx, imgIdx, e.target.value)}
+                                    placeholder={`https://…${label.toLowerCase().replace(/\s+/g, '-')}.jpg`}
+                                    className="w-full px-3 py-2 bg-cream-50 border border-aura-dark/15 rounded-lg font-mono text-[10px] text-aura-dark focus:outline-none focus:border-aura-gold transition-colors pr-10"
+                                  />
+                                  {productForm.colors[activeColorIdx].images[imgIdx] && (
+                                    <a
+                                      href={productForm.colors[activeColorIdx].images[imgIdx]}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="absolute right-2 top-1/2 -translate-y-1/2 text-aura-muted hover:text-aura-gold"
+                                    >
+                                      <ExternalLink size={12} />
+                                    </a>
+                                  )}
+                                </div>
+                                {productForm.colors[activeColorIdx].images[imgIdx] ? (
+                                  <img
+                                    src={productForm.colors[activeColorIdx].images[imgIdx]}
+                                    alt=""
+                                    className="w-10 h-10 rounded-md object-cover border border-aura-dark/15 shrink-0"
+                                    onError={(e) => { e.target.style.display = 'none' }}
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-md border border-dashed border-aura-dark/20 bg-cream-100 shrink-0 flex items-center justify-center text-aura-muted/40 text-[10px]">
+                                    {imgIdx + 1}
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Visual color summary dots */}
+                        <div className="flex gap-1.5 pt-1">
+                          {productForm.colors.map((c, i) => (
+                            <div
+                              key={i}
+                              title={c.name || `Color ${i + 1}`}
+                              onClick={() => setActiveColorIdx(i)}
+                              className={`w-6 h-6 rounded-full border-2 cursor-pointer transition-all ${i === activeColorIdx ? 'border-aura-dark scale-110' : 'border-transparent opacity-60 hover:opacity-100'}`}
+                              style={{ background: c.hex || '#ccc' }}
+                            />
+                          ))}
+                          <button
+                            type="button"
+                            onClick={addColor}
+                            className="w-6 h-6 rounded-full border-2 border-dashed border-aura-dark/30 flex items-center justify-center hover:border-aura-dark text-aura-muted hover:text-aura-dark transition-colors"
+                          >
+                            <Plus size={10} />
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Modal Footer */}
+                <div className="flex items-center justify-between gap-3 px-6 py-4 border-t border-aura-dark/10 bg-cream-100/80 rounded-b-2xl shrink-0">
+                  <p className="font-sans text-[10px] text-aura-muted">
+                    {productForm.colors.length} colorway{productForm.colors.length !== 1 ? 's' : ''} ·{' '}
+                    {productForm.colors.reduce((acc, c) => acc + c.images.filter(Boolean).length, 0)} images added
+                  </p>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={closeProductModal}
+                      className="btn-outline py-2 px-5 text-xs"
+                    >
                       Cancel
                     </button>
-                    <button type="submit" className="btn-primary py-2.5 px-6 text-xs">
-                      Save to Store
+                    <button
+                      type="button"
+                      onClick={handleSaveProduct}
+                      disabled={!productForm.name.trim() || !productForm.price}
+                      className="btn-primary py-2 px-6 text-xs disabled:opacity-40 disabled:cursor-not-allowed"
+                    >
+                      <Save size={13} />
+                      <span>{editProduct ? 'Save Changes' : 'Add to Store'}</span>
                     </button>
                   </div>
-                </form>
+                </div>
               </motion.div>
             </div>
           )}
         </AnimatePresence>
-
-        {/* ─── Create Coupon Modal ─── */}
+        {/* â”€â”€â”€ Create Coupon Modal â”€â”€â”€ */}
         <AnimatePresence>
           {couponModal && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-aura-dark/60 backdrop-blur-sm">
