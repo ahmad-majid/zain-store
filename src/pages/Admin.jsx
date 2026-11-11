@@ -170,20 +170,40 @@ export default function Admin() {
   }
 
   // --- Handlers for Hero ---
+  const [heroForm, setHeroForm] = useState({
+    eyebrow: settings.hero?.eyebrow || '',
+    titleMain: settings.hero?.titleMain || '',
+    titleSub: settings.hero?.titleSub || '',
+    description: settings.hero?.description || '',
+    primaryBtnText: settings.hero?.primaryBtnText || '',
+    primaryBtnLink: settings.hero?.primaryBtnLink || '',
+    secondaryBtnText: settings.hero?.secondaryBtnText || '',
+    secondaryBtnLink: settings.hero?.secondaryBtnLink || '',
+    featuredProductId: settings.hero?.featuredProductId || products[0]?.id || '',
+  })
+
+  useEffect(() => {
+    if (settings.hero) {
+      setHeroForm({
+        eyebrow: settings.hero.eyebrow || '',
+        titleMain: settings.hero.titleMain || '',
+        titleSub: settings.hero.titleSub || '',
+        description: settings.hero.description || '',
+        primaryBtnText: settings.hero.primaryBtnText || '',
+        primaryBtnLink: settings.hero.primaryBtnLink || '',
+        secondaryBtnText: settings.hero.secondaryBtnText || '',
+        secondaryBtnLink: settings.hero.secondaryBtnLink || '',
+        featuredProductId: settings.hero.featuredProductId || products[0]?.id || '',
+      })
+    }
+  }, [settings.hero, products])
+
+  const setHF = (key, val) => setHeroForm((p) => ({ ...p, [key]: val }))
+  const heroProduct = products.find((p) => p.id === heroForm.featuredProductId) || products[0]
+
   const handleSaveHero = (e) => {
     e.preventDefault()
-    const form = e.target
-    updateHero({
-      eyebrow: form.eyebrow.value,
-      titleMain: form.titleMain.value,
-      titleSub: form.titleSub.value,
-      description: form.description.value,
-      primaryBtnText: form.primaryBtnText.value,
-      primaryBtnLink: form.primaryBtnLink.value,
-      secondaryBtnText: form.secondaryBtnText.value,
-      secondaryBtnLink: form.secondaryBtnLink.value,
-      featuredProductId: form.featuredProductId.value,
-    })
+    updateHero(heroForm)
     showSaveSuccess()
   }
 
@@ -562,67 +582,121 @@ export default function Admin() {
             TAB 3: HERO SECTION CRM (TEXT, CTAs, 3D FEATURED PIECE)
            â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */}
         {activeTab === 'hero' && (
-          <form onSubmit={handleSaveHero} className="glass-card rounded-2xl p-6 sm:p-10 border border-aura-dark/10 space-y-6">
+          <form onSubmit={handleSaveHero} className="glass-card rounded-2xl p-6 sm:p-10 border border-aura-dark/10 space-y-8">
             <div className="pb-4 border-b border-aura-dark/10">
               <h2 className="font-serif text-2xl text-aura-dark">Hero Section Customizer</h2>
               <p className="font-sans text-xs text-aura-muted mt-1">
-                Customize titles, description, CTA buttons, and select which archival piece shines on the 3D lookbook card.
+                Customize headlines, description, CTA buttons, and designate which archival garment is showcased on the homepage 3D card.
               </p>
             </div>
 
+            {/* ─── Hero Product Spotlight Card ─── */}
+            <div className="p-5 rounded-2xl bg-cream-50 border border-aura-gold/30 shadow-sm space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <label className="font-semibold uppercase tracking-[0.2em] text-[10px] text-aura-gold flex items-center gap-1.5">
+                    <Sparkles size={12} /> Spotlighted 3D Hero Product
+                  </label>
+                  <p className="text-[11px] text-aura-muted font-sans mt-0.5">
+                    This exact piece appears on the interactive floating lookbook card in the hero section.
+                  </p>
+                </div>
+                {heroProduct && (
+                  <span className="text-[10px] uppercase font-bold tracking-widest px-2.5 py-1 rounded bg-aura-gold/20 text-aura-dark border border-aura-gold/30">
+                    Live On Hero
+                  </span>
+                )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
+                <div className="md:col-span-7">
+                  <label className="font-semibold uppercase tracking-wider block mb-1.5 text-xs text-aura-dark/80">
+                    Select Product From Inventory:
+                  </label>
+                  <select
+                    value={heroForm.featuredProductId}
+                    onChange={(e) => setHF('featuredProductId', e.target.value)}
+                    className="w-full px-4 py-3 bg-white border border-aura-dark/20 rounded-xl font-medium text-xs text-aura-dark focus:outline-none focus:border-aura-gold shadow-sm"
+                  >
+                    {products.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.name} — Rs. {Number(p.price).toLocaleString()} ({p.colors?.length || 1} colors)
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* Preview Thumbnail & Details */}
+                {heroProduct && (
+                  <div className="md:col-span-5 flex items-center gap-3.5 p-3 bg-white/80 rounded-xl border border-aura-dark/10 shadow-inner">
+                    <img
+                      src={heroProduct.colors?.[0]?.images?.[0] || heroProduct.images?.[0] || 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=900&h=1200&fit=crop&q=85'}
+                      alt={heroProduct.name}
+                      className="w-16 h-20 rounded-lg object-cover border border-aura-dark/10 shrink-0"
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="font-serif text-sm text-aura-dark truncate font-bold">{heroProduct.name}</p>
+                      <p className="text-xs font-semibold text-aura-gold mt-0.5">Rs. {Number(heroProduct.price).toLocaleString()}</p>
+                      <p className="text-[10px] text-aura-muted mt-0.5 capitalize">{heroProduct.category_id || heroProduct.categories?.name} · {heroProduct.condition}</p>
+                      <div className="flex gap-1 mt-1.5">
+                        {heroProduct.colors?.slice(0, 4).map((c, i) => (
+                          <span
+                            key={i}
+                            title={c.name}
+                            className="w-3 h-3 rounded-full border border-black/10 inline-block"
+                            style={{ backgroundColor: c.hex }}
+                          />
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* ─── Hero Text & CTA Customization ─── */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 text-xs font-sans">
               <div>
                 <label className="font-semibold uppercase tracking-wider block mb-1">Eyebrow Badge Text</label>
                 <input
                   type="text"
-                  name="eyebrow"
-                  defaultValue={settings.hero?.eyebrow}
-                  className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl"
+                  value={heroForm.eyebrow}
+                  onChange={(e) => setHF('eyebrow', e.target.value)}
+                  className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl focus:outline-none focus:border-aura-gold"
+                  placeholder="e.g. AUTUMN / WINTER 2026 ARCHIVES"
                 />
               </div>
 
               <div>
-                <label className="font-semibold uppercase tracking-wider block mb-1">Featured 3D Hero Product</label>
-                <select
-                  name="featuredProductId"
-                  defaultValue={settings.hero?.featuredProductId}
-                  className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl font-medium"
-                >
-                  {products.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name} â€” Rs. {Number(p.price).toLocaleString()}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="font-semibold uppercase tracking-wider block mb-1">Main Title (e.g. Thrift)</label>
+                <label className="font-semibold uppercase tracking-wider block mb-1">Main Brand Word</label>
                 <input
                   type="text"
-                  name="titleMain"
-                  defaultValue={settings.hero?.titleMain}
-                  className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl font-serif text-base"
+                  value={heroForm.titleMain}
+                  onChange={(e) => setHF('titleMain', e.target.value)}
+                  className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl font-serif text-base focus:outline-none focus:border-aura-gold"
+                  placeholder="Thrift"
                 />
               </div>
 
               <div>
-                <label className="font-semibold uppercase tracking-wider block mb-1">Subtitle Accent (e.g. aura)</label>
+                <label className="font-semibold uppercase tracking-wider block mb-1">Subtitle Accent (Italic)</label>
                 <input
                   type="text"
-                  name="titleSub"
-                  defaultValue={settings.hero?.titleSub}
-                  className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl font-serif italic text-base"
+                  value={heroForm.titleSub}
+                  onChange={(e) => setHF('titleSub', e.target.value)}
+                  className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl font-serif italic text-base focus:outline-none focus:border-aura-gold"
+                  placeholder="aura"
                 />
               </div>
 
               <div className="md:col-span-2">
                 <label className="font-semibold uppercase tracking-wider block mb-1">Hero Description Paragraph</label>
                 <textarea
-                  name="description"
+                  value={heroForm.description}
+                  onChange={(e) => setHF('description', e.target.value)}
                   rows={3}
-                  defaultValue={settings.hero?.description}
-                  className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl"
+                  className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl focus:outline-none focus:border-aura-gold"
+                  placeholder="Handpicked luxury archives..."
                 />
               </div>
 
@@ -630,9 +704,9 @@ export default function Admin() {
                 <label className="font-semibold uppercase tracking-wider block mb-1">Primary CTA Button Text</label>
                 <input
                   type="text"
-                  name="primaryBtnText"
-                  defaultValue={settings.hero?.primaryBtnText}
-                  className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl"
+                  value={heroForm.primaryBtnText}
+                  onChange={(e) => setHF('primaryBtnText', e.target.value)}
+                  className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl focus:outline-none focus:border-aura-gold"
                 />
               </div>
 
@@ -640,9 +714,9 @@ export default function Admin() {
                 <label className="font-semibold uppercase tracking-wider block mb-1">Primary Button Link</label>
                 <input
                   type="text"
-                  name="primaryBtnLink"
-                  defaultValue={settings.hero?.primaryBtnLink}
-                  className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl"
+                  value={heroForm.primaryBtnLink}
+                  onChange={(e) => setHF('primaryBtnLink', e.target.value)}
+                  className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl focus:outline-none focus:border-aura-gold"
                 />
               </div>
 
@@ -650,9 +724,9 @@ export default function Admin() {
                 <label className="font-semibold uppercase tracking-wider block mb-1">Secondary Button Text</label>
                 <input
                   type="text"
-                  name="secondaryBtnText"
-                  defaultValue={settings.hero?.secondaryBtnText}
-                  className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl"
+                  value={heroForm.secondaryBtnText}
+                  onChange={(e) => setHF('secondaryBtnText', e.target.value)}
+                  className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl focus:outline-none focus:border-aura-gold"
                 />
               </div>
 
@@ -660,15 +734,15 @@ export default function Admin() {
                 <label className="font-semibold uppercase tracking-wider block mb-1">Secondary Button Link</label>
                 <input
                   type="text"
-                  name="secondaryBtnLink"
-                  defaultValue={settings.hero?.secondaryBtnLink}
-                  className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl"
+                  value={heroForm.secondaryBtnLink}
+                  onChange={(e) => setHF('secondaryBtnLink', e.target.value)}
+                  className="w-full px-4 py-2.5 bg-cream-50 border border-aura-dark/20 rounded-xl focus:outline-none focus:border-aura-gold"
                 />
               </div>
             </div>
 
             <div className="flex justify-end pt-4 border-t border-aura-dark/10">
-              <button type="submit" className="btn-primary py-3 px-8 text-xs flex items-center gap-2">
+              <button type="submit" className="btn-primary py-3 px-8 text-xs flex items-center gap-2 shadow-md hover:shadow-lg transition-all">
                 <Save size={15} />
                 <span>Save Hero Settings</span>
               </button>
