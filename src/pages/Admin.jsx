@@ -5,7 +5,7 @@ import { useStoreSettings } from '../context/StoreSettingsContext'
 import {
   Package, Megaphone, Sparkles, Navigation, Percent, Image, FolderTree, BookOpen,
   Plus, Trash2, Edit3, Save, RotateCcw, Check, Upload, ExternalLink, Video, Eye,
-  CheckCircle2, Flame, Tag, Layers, X
+  CheckCircle2, Flame, Tag, Layers, X, ChevronDown
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -200,6 +200,7 @@ export default function Admin() {
 
   const setHF = (key, val) => setHeroForm((p) => ({ ...p, [key]: val }))
   const heroProduct = products.find((p) => p.id === heroForm.featuredProductId) || products[0]
+  const [heroSelectOpen, setHeroSelectOpen] = useState(false)
 
   const handleSaveHero = (e) => {
     e.preventDefault()
@@ -608,31 +609,107 @@ export default function Admin() {
                 )}
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-center">
-                <div className="md:col-span-7">
+              <div className="grid grid-cols-1 md:grid-cols-12 gap-5 items-start">
+                <div className="md:col-span-7 relative">
                   <label className="font-semibold uppercase tracking-wider block mb-1.5 text-xs text-aura-dark/80">
                     Select Product From Inventory:
                   </label>
-                  <select
-                    value={heroForm.featuredProductId}
-                    onChange={(e) => setHF('featuredProductId', e.target.value)}
-                    className="w-full px-4 py-3 bg-white border border-aura-dark/20 rounded-xl font-medium text-xs text-aura-dark focus:outline-none focus:border-aura-gold shadow-sm"
-                  >
-                    {products.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name} — Rs. {Number(p.price).toLocaleString()} ({p.colors?.length || 1} colors)
-                      </option>
-                    ))}
-                  </select>
+
+                  {/* Custom Rich Dropdown Selector with small image after name */}
+                  <div className="relative">
+                    <button
+                      type="button"
+                      onClick={() => setHeroSelectOpen(!heroSelectOpen)}
+                      className="w-full flex items-center justify-between px-3.5 py-2.5 bg-white border border-aura-dark/20 rounded-xl text-xs text-aura-dark hover:border-aura-gold focus:outline-none focus:border-aura-gold shadow-sm transition-all text-left"
+                    >
+                      <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                        <span className="font-serif font-bold text-sm text-aura-dark truncate">
+                          {heroProduct?.name || 'Select Product'}
+                        </span>
+                        {/* Small Image After Name */}
+                        {heroProduct && (
+                          <img
+                            src={heroProduct.colors?.[0]?.images?.[0] || heroProduct.images?.[0] || 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=900&h=1200&fit=crop&q=85'}
+                            alt={heroProduct.name}
+                            className="w-7 h-7 rounded-md object-cover border border-aura-dark/15 shrink-0 shadow-xs"
+                          />
+                        )}
+                        <span className="text-[11px] font-semibold text-aura-gold shrink-0">
+                          Rs. {Number(heroProduct?.price || 0).toLocaleString()}
+                        </span>
+                      </div>
+                      <ChevronDown
+                        size={16}
+                        className={`text-aura-muted shrink-0 transition-transform duration-200 ${
+                          heroSelectOpen ? 'rotate-180' : ''
+                        }`}
+                      />
+                    </button>
+
+                    {/* Dropdown Menu Options */}
+                    {heroSelectOpen && (
+                      <div className="absolute top-full left-0 right-0 mt-1.5 bg-white border border-aura-gold/30 rounded-xl shadow-2xl z-30 max-h-72 overflow-y-auto divide-y divide-aura-dark/5 p-1.5">
+                        {products.map((p) => {
+                          const pImg = p.colors?.[0]?.images?.[0] || p.images?.[0] || 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=900&h=1200&fit=crop&q=85'
+                          const isSelected = p.id === heroForm.featuredProductId
+
+                          return (
+                            <div
+                              key={p.id}
+                              onClick={() => {
+                                setHF('featuredProductId', p.id)
+                                setHeroSelectOpen(false)
+                              }}
+                              className={`flex items-center justify-between p-2.5 rounded-lg cursor-pointer transition-colors ${
+                                isSelected
+                                  ? 'bg-cream-100/90 text-aura-dark'
+                                  : 'hover:bg-cream-50 text-aura-dark/90'
+                              }`}
+                            >
+                              <div className="flex items-center gap-2.5 min-w-0 pr-2">
+                                <span className="font-serif font-semibold text-xs text-aura-dark truncate">
+                                  {p.name}
+                                </span>
+                                {/* Small image after the name */}
+                                <img
+                                  src={pImg}
+                                  alt={p.name}
+                                  className="w-8 h-8 rounded-md object-cover border border-aura-dark/10 shrink-0"
+                                />
+                                <span className="text-[11px] text-aura-gold font-medium shrink-0">
+                                  Rs. {Number(p.price).toLocaleString()}
+                                </span>
+                              </div>
+
+                              <div className="flex items-center gap-2 shrink-0">
+                                <div className="flex gap-1">
+                                  {p.colors?.slice(0, 3).map((c, i) => (
+                                    <span
+                                      key={i}
+                                      className="w-2.5 h-2.5 rounded-full border border-black/10 inline-block"
+                                      style={{ backgroundColor: c.hex }}
+                                    />
+                                  ))}
+                                </div>
+                                {isSelected && (
+                                  <Check size={14} className="text-aura-dark font-bold ml-1" />
+                                )}
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
-                {/* Preview Thumbnail & Details */}
+                {/* Preview Thumbnail & Details Card */}
                 {heroProduct && (
-                  <div className="md:col-span-5 flex items-center gap-3.5 p-3 bg-white/80 rounded-xl border border-aura-dark/10 shadow-inner">
+                  <div className="md:col-span-5 flex items-center gap-3.5 p-3.5 bg-white/90 rounded-xl border border-aura-dark/10 shadow-sm">
                     <img
                       src={heroProduct.colors?.[0]?.images?.[0] || heroProduct.images?.[0] || 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=900&h=1200&fit=crop&q=85'}
                       alt={heroProduct.name}
-                      className="w-16 h-20 rounded-lg object-cover border border-aura-dark/10 shrink-0"
+                      className="w-16 h-20 rounded-lg object-cover border border-aura-dark/10 shrink-0 shadow-sm"
                     />
                     <div className="min-w-0 flex-1">
                       <p className="font-serif text-sm text-aura-dark truncate font-bold">{heroProduct.name}</p>
