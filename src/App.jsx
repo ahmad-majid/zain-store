@@ -22,6 +22,7 @@ import SizingGuide from './pages/SizingGuide'
 import Returns from './pages/Returns'
 import FAQ from './pages/FAQ'
 import PrivacyTerms from './pages/PrivacyTerms'
+import WhatsAppConcierge from './components/ui/WhatsAppConcierge'
 import './index.css'
 
 function ScrollToTop() {
@@ -60,6 +61,7 @@ function App() {
               <Route path="/privacy" element={<PrivacyTerms />} />
               <Route path="/terms" element={<PrivacyTerms />} />
             </Routes>
+            <WhatsAppConcierge />
             <Footer />
           </CartProvider>
         </AuthProvider>

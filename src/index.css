@@ -239,3 +239,23 @@
   line-height: 0.88;
   letter-spacing: 0.04em;
 }
+
+/* ─── Print styling for Archival Invoices ────────────────── */
+@media print {
+  nav, footer, .custom-cursor, #announcement-bar, canvas, aside, button {
+    display: none !important;
+  }
+  body {
+    background: #ffffff !important;
+    color: #000000 !important;
+    cursor: auto !important;
+  }
+  #printable-invoice {
+    border: 1px solid #ddd !important;
+    box-shadow: none !important;
+    background: #ffffff !important;
+    padding: 20px !important;
+    margin: 0 !important;
+    max-width: 100% !important;
+  }
+}

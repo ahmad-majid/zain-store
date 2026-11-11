@@ -4,7 +4,10 @@ import { supabase } from '../lib/supabase'
 import { sampleProducts } from '../data/sampleProducts'
 import { useCart } from '../context/CartContext'
 import ProductCard from '../components/ui/ProductCard'
-import { ShoppingBag, ArrowLeft, Heart, ShieldCheck, Sparkles, Truck, RefreshCw, Check } from 'lucide-react'
+import {
+  ShoppingBag, ArrowLeft, Heart, ShieldCheck, Sparkles, Truck, RefreshCw, Check,
+  Maximize2, ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut
+} from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function ProductDetail() {
@@ -20,6 +23,27 @@ export default function ProductDetail() {
   const [selectedSize, setSelectedSize] = useState('')
   const [added, setAdded] = useState(false)
   const [liked, setLiked] = useState(false)
+
+  // Lightbox Zoom Inspection
+  const [lightboxOpen, setLightboxOpen] = useState(false)
+  const [isZoomed, setIsZoomed] = useState(false)
+
+  // Keyboard navigation for Lightbox
+  useEffect(() => {
+    if (!lightboxOpen) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setLightboxOpen(false)
+        setIsZoomed(false)
+      } else if (e.key === 'ArrowRight') {
+        setSelectedAngleIdx((prev) => (prev + 1) % (activeImages.length || 1))
+      } else if (e.key === 'ArrowLeft') {
+        setSelectedAngleIdx((prev) => (prev - 1 + (activeImages.length || 1)) % (activeImages.length || 1))
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [lightboxOpen, activeImages.length])
 
   useEffect(() => {
     async function fetchDetail() {
@@ -144,12 +168,30 @@ export default function ProductDetail() {
             <div className="hanger-bar w-56 sm:w-72 h-3.5 mb-3" />
 
             {/* Main Stage with Right Side Hanging Tags */}
-            <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-cream-200 border border-cream-300 shadow-xl">
+            <div className="relative w-full aspect-[3/4] rounded-xl overflow-hidden bg-cream-200 border border-cream-300 shadow-xl group">
               <img
                 src={currentImage}
                 alt={`${product.name} - ${activeColor.name}`}
-                className="w-full h-full object-cover transition-all duration-500"
+                onClick={() => {
+                  setIsZoomed(false)
+                  setLightboxOpen(true)
+                }}
+                className="w-full h-full object-cover transition-all duration-500 cursor-zoom-in"
               />
+
+              {/* Inspect / Zoom Button */}
+              <button
+                type="button"
+                onClick={() => {
+                  setIsZoomed(false)
+                  setLightboxOpen(true)
+                }}
+                className="absolute bottom-4 left-4 glass-card px-3 py-1.5 rounded-full text-aura-dark hover:bg-aura-gold hover:text-aura-dark shadow-md transition-all flex items-center gap-1.5 z-20 text-[10px] font-sans uppercase font-bold tracking-wider"
+                title="Inspect Archival Detail"
+              >
+                <Maximize2 size={12} />
+                <span>Zoom &amp; Inspect</span>
+              </button>
 
               {/* Tag / Badge */}
               <div className="absolute top-4 left-4 glass-card px-3.5 py-1.5 rounded-full text-[10px] font-sans tracking-widest uppercase font-semibold text-aura-dark shadow-sm">
@@ -400,6 +442,123 @@ export default function ProductDetail() {
           </div>
         </div>
       </div>
+
+      {/* ─── High-Resolution Lightbox & Studio Inspector ─── */}
+      <AnimatePresence>
+        {lightboxOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-aura-dark/95 backdrop-blur-md p-4 sm:p-8">
+            {/* Top Bar with Title, Angle indicator & Close */}
+            <div className="absolute top-0 left-0 right-0 p-4 sm:p-6 flex items-center justify-between z-50 text-cream-100 bg-gradient-to-b from-black/60 to-transparent">
+              <div>
+                <h3 className="font-serif text-lg sm:text-xl text-cream-50 font-normal">
+                  {product.name}
+                </h3>
+                <p className="font-sans text-[11px] text-cream-300/70 tracking-widest uppercase">
+                  {activeColor.name} · {angles[selectedAngleIdx]?.label} ({selectedAngleIdx + 1} of {activeImages.length})
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3">
+                {/* 2x Magnify toggle */}
+                <button
+                  type="button"
+                  onClick={() => setIsZoomed(!isZoomed)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-sans tracking-wider uppercase font-semibold flex items-center gap-1.5 transition-all ${
+                    isZoomed
+                      ? 'bg-aura-gold text-aura-dark shadow-md'
+                      : 'bg-white/10 hover:bg-white/20 text-cream-100'
+                  }`}
+                  title={isZoomed ? 'Reset zoom' : 'Magnify 2x texture inspection'}
+                >
+                  {isZoomed ? <ZoomOut size={14} /> : <ZoomIn size={14} />}
+                  <span className="hidden sm:inline">{isZoomed ? 'Zoom 1x' : 'Inspect 2x'}</span>
+                </button>
+
+                {/* Close */}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setLightboxOpen(false)
+                    setIsZoomed(false)
+                  }}
+                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-aura-gold hover:text-aura-dark text-cream-100 flex items-center justify-center transition-colors"
+                  title="Close (Esc)"
+                >
+                  <X size={18} />
+                </button>
+              </div>
+            </div>
+
+            {/* Previous Arrow */}
+            {activeImages.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setSelectedAngleIdx((prev) => (prev - 1 + activeImages.length) % activeImages.length)}
+                className="absolute left-4 sm:left-8 top-1/2 -translate-y-1/2 z-40 w-11 h-11 rounded-full bg-white/10 hover:bg-aura-gold hover:text-aura-dark text-cream-100 flex items-center justify-center transition-colors shadow-xl"
+                title="Previous Angle (Left Arrow)"
+              >
+                <ChevronLeft size={22} />
+              </button>
+            )}
+
+            {/* Next Arrow */}
+            {activeImages.length > 1 && (
+              <button
+                type="button"
+                onClick={() => setSelectedAngleIdx((prev) => (prev + 1) % activeImages.length)}
+                className="absolute right-4 sm:right-8 top-1/2 -translate-y-1/2 z-40 w-11 h-11 rounded-full bg-white/10 hover:bg-aura-gold hover:text-aura-dark text-cream-100 flex items-center justify-center transition-colors shadow-xl"
+                title="Next Angle (Right Arrow)"
+              >
+                <ChevronRight size={22} />
+              </button>
+            )}
+
+            {/* Main Stage Image in Lightbox */}
+            <div className="relative max-w-4xl max-h-[75vh] w-full flex items-center justify-center overflow-hidden my-auto select-none">
+              <motion.img
+                key={`${selectedColorIdx}-${selectedAngleIdx}`}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{
+                  opacity: 1,
+                  scale: isZoomed ? 1.7 : 1,
+                }}
+                transition={{ duration: 0.25 }}
+                src={currentImage}
+                alt=""
+                onClick={() => setIsZoomed(!isZoomed)}
+                className={`max-h-[75vh] max-w-full object-contain rounded-lg shadow-2xl transition-transform ${
+                  isZoomed ? 'cursor-zoom-out' : 'cursor-zoom-in'
+                }`}
+              />
+            </div>
+
+            {/* Bottom Angle Rail & Color Indicator */}
+            <div className="absolute bottom-4 left-0 right-0 flex flex-col items-center gap-2.5 z-40 px-4">
+              <div className="flex gap-2 p-1.5 bg-black/50 backdrop-blur-md rounded-xl border border-white/10">
+                {activeImages.map((img, i) => (
+                  <button
+                    key={i}
+                    onClick={() => {
+                      setSelectedAngleIdx(i)
+                      setIsZoomed(false)
+                    }}
+                    className={`w-12 h-14 rounded-md overflow-hidden border-2 transition-all p-0.5 ${
+                      selectedAngleIdx === i
+                        ? 'border-aura-gold ring-2 ring-aura-gold/50 scale-105'
+                        : 'border-transparent opacity-60 hover:opacity-100'
+                    }`}
+                  >
+                    <img src={img} alt="" className="w-full h-full object-cover rounded-xs" />
+                  </button>
+                ))}
+              </div>
+              <span className="text-[10px] font-sans tracking-widest uppercase text-cream-300/50">
+                Click photo or press Esc to close • Use ← / → arrows
+              </span>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
     </main>
   )
 }

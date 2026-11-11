@@ -7,10 +7,21 @@ export default function Returns() {
   const [orderId, setOrderId] = useState('')
   const [email, setEmail] = useState('')
   const [submitted, setSubmitted] = useState(false)
+  const [matchedOrder, setMatchedOrder] = useState(null)
 
   const handleLookup = (e) => {
     e.preventDefault()
-    if (!orderId || !email) return
+    if (!orderId) return
+    const cleanId = orderId.trim().toUpperCase()
+
+    try {
+      const orders = JSON.parse(localStorage.getItem('thrift-aura-orders') || '[]')
+      const found = orders.find((o) => o.id.toUpperCase() === cleanId)
+      setMatchedOrder(found || null)
+    } catch {
+      setMatchedOrder(null)
+    }
+
     setSubmitted(true)
   }
 
@@ -128,19 +139,53 @@ export default function Returns() {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            className="max-w-md mx-auto p-6 rounded-2xl bg-cream-100 border border-aura-gold/40 text-center space-y-3"
+            className="max-w-lg mx-auto p-6 sm:p-8 rounded-2xl bg-cream-100 border border-aura-gold/40 space-y-4"
           >
-            <CheckCircle2 size={32} className="text-emerald-700 mx-auto" />
-            <h4 className="font-serif text-xl text-aura-dark">Request Registered</h4>
-            <p className="font-sans text-xs text-aura-dark/70 leading-relaxed">
-              Order <span className="font-mono font-bold text-aura-dark">{orderId}</span> has been verified. A return authorization package and DHL pickup confirmation have been dispatched to <span className="font-semibold text-aura-dark">{email}</span>.
-            </p>
-            <button
-              onClick={() => { setSubmitted(false); setOrderId(''); setEmail('') }}
-              className="font-sans text-xs text-aura-warm underline hover:text-aura-dark mt-2 inline-block"
-            >
-              Check another order
-            </button>
+            <div className="text-center">
+              <CheckCircle2 size={36} className="text-emerald-700 mx-auto mb-2" />
+              <h4 className="font-serif text-2xl text-aura-dark">Order Verified</h4>
+              <p className="font-sans text-xs text-aura-dark/70 mt-1">
+                Found in our archival order registry under <span className="font-mono font-bold text-aura-dark">{orderId.toUpperCase()}</span>
+              </p>
+            </div>
+
+            {matchedOrder && (
+              <div className="p-4 rounded-xl bg-white border border-aura-dark/10 space-y-3 text-xs font-sans">
+                <div className="flex justify-between items-center pb-2 border-b border-aura-dark/10">
+                  <span className="text-aura-muted">Client Name:</span>
+                  <span className="font-bold text-aura-dark">{matchedOrder.client?.fullName}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-aura-dark/10">
+                  <span className="text-aura-muted">Destination:</span>
+                  <span className="font-medium text-aura-dark">{matchedOrder.client?.city}</span>
+                </div>
+                <div className="flex justify-between items-center pb-2 border-b border-aura-dark/10">
+                  <span className="text-aura-muted">Pieces:</span>
+                  <span className="font-medium text-aura-dark">
+                    {matchedOrder.items?.map((it) => `${it.name} (x${it.quantity})`).join(', ')}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-aura-muted">Total:</span>
+                  <span className="font-bold text-aura-gold font-mono">Rs. {Number(matchedOrder.total).toLocaleString()}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="p-3.5 rounded-xl bg-emerald-950/5 border border-emerald-600/20 text-center">
+              <p className="font-sans text-xs text-emerald-800 leading-relaxed">
+                ✓ Return authorization waybill generated. Complimentary DHL pickup has been scheduled for this address.
+              </p>
+            </div>
+
+            <div className="text-center pt-2">
+              <button
+                onClick={() => { setSubmitted(false); setOrderId(''); setEmail(''); setMatchedOrder(null) }}
+                className="font-sans text-xs text-aura-warm underline hover:text-aura-dark transition-colors"
+              >
+                Lookup Another Order
+              </button>
+            </div>
           </motion.div>
         )}
       </div>
