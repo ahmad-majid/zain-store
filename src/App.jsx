@@ -1,4 +1,5 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { useEffect } from 'react'
 import { CartProvider } from './context/CartContext'
 import { AuthProvider } from './context/AuthContext'
 import { StoreSettingsProvider } from './context/StoreSettingsContext'
@@ -15,7 +16,21 @@ import Auth from './pages/Auth'
 import Admin from './pages/Admin'
 import AdminLogin from './pages/AdminLogin'
 import Campaign from './pages/Campaign'
+import AboutUs from './pages/AboutUs'
+import Sustainability from './pages/Sustainability'
+import SizingGuide from './pages/SizingGuide'
+import Returns from './pages/Returns'
+import FAQ from './pages/FAQ'
+import PrivacyTerms from './pages/PrivacyTerms'
 import './index.css'
+
+function ScrollToTop() {
+  const { pathname } = useLocation()
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+  }, [pathname])
+  return null
+}
 
 function App() {
   return (
@@ -23,6 +38,7 @@ function App() {
       <StoreSettingsProvider>
         <AuthProvider>
           <CartProvider>
+            <ScrollToTop />
             <CustomCursor />
             <AnnouncementBar />
             <ThreeBackground />
@@ -36,6 +52,13 @@ function App() {
               <Route path="/admin" element={<Admin />} />
               <Route path="/admin-access" element={<AdminLogin />} />
               <Route path="/campaign/:slug" element={<Campaign />} />
+              <Route path="/about" element={<AboutUs />} />
+              <Route path="/sustainability" element={<Sustainability />} />
+              <Route path="/sizing-guide" element={<SizingGuide />} />
+              <Route path="/returns" element={<Returns />} />
+              <Route path="/faq" element={<FAQ />} />
+              <Route path="/privacy" element={<PrivacyTerms />} />
+              <Route path="/terms" element={<PrivacyTerms />} />
             </Routes>
             <Footer />
           </CartProvider>

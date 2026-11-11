@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react'
+import { useState, useMemo, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useStoreSettings } from '../context/StoreSettingsContext'
 import ProductCard from '../components/ui/ProductCard'
@@ -22,6 +22,11 @@ export default function Shop() {
 
   const initialCat = searchParams.get('category') || 'all'
   const [selectedCategory, setSelectedCategory] = useState(initialCat)
+
+  useEffect(() => {
+    const cat = searchParams.get('category') || 'all'
+    setSelectedCategory(cat)
+  }, [searchParams])
   const [selectedCondition, setSelectedCondition] = useState('All')
   const [selectedSize, setSelectedSize] = useState('All')
   const [maxPrice, setMaxPrice] = useState(25000)
