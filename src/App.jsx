@@ -6,8 +6,6 @@ import { StoreSettingsProvider } from './context/StoreSettingsContext'
 import AnnouncementBar from './components/layout/AnnouncementBar'
 import Navbar from './components/layout/Navbar'
 import Footer from './components/layout/Footer'
-import ThreeBackground from './components/3d/ThreeBackground'
-import CustomCursor from './components/ui/CustomCursor'
 import Home from './pages/Home'
 import Shop from './pages/Shop'
 import ProductDetail from './pages/ProductDetail'
@@ -40,9 +38,7 @@ function App() {
         <AuthProvider>
           <CartProvider>
             <ScrollToTop />
-            <CustomCursor />
             <AnnouncementBar />
-            <ThreeBackground />
             <Navbar />
             <Routes>
               <Route path="/" element={<Home />} />

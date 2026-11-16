@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
 import { useStoreSettings } from '../context/StoreSettingsContext'
+import { sendOrderConfirmationEmails } from '../lib/emailService'
 import {
   Trash2, Plus, Minus, ShoppingBag, ArrowLeft, ShieldCheck, Sparkles,
   ArrowRight, CheckCircle2, Tag, Printer, Copy, Check, MessageCircle, X,
@@ -78,8 +79,8 @@ export default function Cart() {
   // Handle final order confirmation
   const handlePlaceOrder = (e) => {
     e.preventDefault()
-    if (!form.fullName || !form.phone || !form.address || !form.city) {
-      alert('Please fill out all required shipping fields.')
+    if (!form.fullName || !form.phone || !form.address || !form.city || !form.email) {
+      alert('Please fill out all required shipping fields, including email for order tracking.')
       return
     }
 
@@ -101,13 +102,16 @@ export default function Cart() {
       status: 'Pending Atelier Prep',
     }
 
-    // Persist to localStorage for Returns & Order Lookup integration
+    // Persist to localStorage for CRM & Returns Order Lookup integration
     try {
       const existing = JSON.parse(localStorage.getItem('thrift-aura-orders') || '[]')
       localStorage.setItem('thrift-aura-orders', JSON.stringify([newOrder, ...existing]))
     } catch (err) {
       console.warn('Failed saving order to local storage', err)
     }
+
+    // Trigger Real-Time Gmail Notifications (Client Confirmation + Store Owner Alert)
+    sendOrderConfirmationEmails(newOrder)
 
     setConfirmedOrder(newOrder)
     setCheckoutOpen(false)
@@ -187,7 +191,7 @@ export default function Cart() {
             <div>
               <h4 className="font-serif text-base font-bold text-aura-dark">Acquisition Reserved &amp; Authenticated</h4>
               <p className="font-sans text-xs text-aura-dark/70 leading-relaxed">
-                Your archival piece is reserved. Our concierge is applying steam sanitization and archival tissue wrapping before insured courier dispatch.
+                Your archival piece is reserved. An official confirmation email with your acquisition receipt has been dispatched to <strong className="text-aura-dark">{confirmedOrder.client.email}</strong> and our atelier dispatch team (u06626982@gmail.com).
               </p>
             </div>
           </div>
@@ -587,10 +591,11 @@ export default function Cart() {
 
                   <div>
                     <label className="font-semibold uppercase tracking-wider block mb-1 text-aura-dark/80">
-                      Email Address (Optional for e-Receipt)
+                      Email Address (For Real-Time Order &amp; Courier Tracking) <span className="text-red-500">*</span>
                     </label>
                     <input
                       type="email"
+                      required
                       value={form.email}
                       onChange={(e) => setField('email', e.target.value)}
                       placeholder="collector@domain.com"

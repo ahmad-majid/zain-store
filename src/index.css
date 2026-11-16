@@ -32,7 +32,7 @@
     color: #0d0d0d;
     font-family: Inter, system-ui, sans-serif;
     overflow-x: hidden;
-    cursor: none;
+    cursor: default;
     -webkit-font-smoothing: antialiased;
   }
 
@@ -58,49 +58,9 @@
     scrollbar-color: #c5a062 #ede4d6;
   }
 
-  /* Touch device cursor reset */
-  @media (hover: none) {
-    body { cursor: auto; }
-    #custom-cursor, #custom-cursor-ring { display: none; }
-  }
-
   h1, h2, h3 { font-family: 'DM Serif Display', Georgia, serif; }
-  a { cursor: none; }
-  button { cursor: none; }
-}
-
-/* ─── Custom Cursor ─────────────────────────────────────── */
-#custom-cursor {
-  position: fixed;
-  width: 8px;
-  height: 8px;
-  background: #0d0d0d;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 9999;
-  transform: translate(-50%, -50%);
-  transition: width 0.2s, height 0.2s, background 0.2s;
-}
-#custom-cursor.hovered {
-  width: 14px;
-  height: 14px;
-  background: #c5a062;
-}
-#custom-cursor-ring {
-  position: fixed;
-  width: 38px;
-  height: 38px;
-  border: 1.5px solid #0d0d0d;
-  border-radius: 50%;
-  pointer-events: none;
-  z-index: 9998;
-  transform: translate(-50%, -50%);
-  transition: width 0.3s, height 0.3s, border-color 0.3s;
-}
-#custom-cursor-ring.hovered {
-  width: 52px;
-  height: 52px;
-  border-color: #c5a062;
+  a, button, select, [role="button"] { cursor: pointer; }
+  input, textarea { cursor: text; }
 }
 
 /* ─── 3D Canvas ─────────────────────────────────────────── */

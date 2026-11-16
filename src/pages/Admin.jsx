@@ -2,10 +2,11 @@
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useStoreSettings } from '../context/StoreSettingsContext'
+import OrdersCRM from '../components/admin/OrdersCRM'
 import {
   Package, Megaphone, Sparkles, Navigation, Percent, Image, FolderTree, BookOpen,
   Plus, Trash2, Edit3, Save, RotateCcw, Check, Upload, ExternalLink, Video, Eye,
-  CheckCircle2, Flame, Tag, Layers, X, ChevronDown
+  CheckCircle2, Flame, Tag, Layers, X, ChevronDown, ShoppingBag
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -18,7 +19,7 @@ export default function Admin() {
   } = useStoreSettings()
 
   const navigate = useNavigate()
-  const [activeTab, setActiveTab] = useState('inventory')
+  const [activeTab, setActiveTab] = useState('orders')
   const [savedNotice, setSavedNotice] = useState(false)
 
   // Guard: only admins may access this page
@@ -349,6 +350,7 @@ export default function Admin() {
         {/* Tab Selector Navigation */}
         <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 scroll-row border-b border-aura-dark/10">
           {[
+            { id: 'orders', label: 'Client Orders & CRM', icon: ShoppingBag },
             { id: 'inventory', label: 'Archival Products', icon: Package, count: products.length },
             { id: 'announcement', label: 'Announcement Bar', icon: Megaphone, badge: settings.announcement?.enabled ? 'ON' : 'OFF' },
             { id: 'hero', label: 'Hero Showcase', icon: Sparkles },
@@ -386,6 +388,10 @@ export default function Admin() {
             )
           })}
         </div>
+
+        {activeTab === 'orders' && (
+          <OrdersCRM onNotify={showSaveSuccess} />
+        )}
 
         {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
             TAB 1: PRODUCTS INVENTORY & HOMEPAGE FEATURED SELECTION

