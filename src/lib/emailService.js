@@ -6,7 +6,6 @@
 
 /**
  * Dispatch an order confirmation email to the client + instant alert to the store owner
- * @param {Object} order - Full order details including items, client info, and total
  */
 export async function sendOrderConfirmationEmails(order) {
   try {
@@ -36,9 +35,6 @@ export async function sendOrderConfirmationEmails(order) {
 
 /**
  * Dispatch an order status update email to the client + confirmation copy to owner
- * @param {Object} order - The order object
- * @param {string} newStatus - The updated status (e.g. 'Dispatched via Courier', 'Delivered')
- * @param {Object} trackingInfo - { courier, trackingNumber, notes }
  */
 export async function sendOrderStatusUpdateEmail(order, newStatus, trackingInfo = {}) {
   try {
@@ -64,6 +60,107 @@ export async function sendOrderStatusUpdateEmail(order, newStatus, trackingInfo 
     return { success: true, data }
   } catch (err) {
     console.warn('Network or server error while dispatching status update email:', err)
+    return { success: false, error: err.message }
+  }
+}
+
+/**
+ * Dispatch 6-digit verification code to the client's Gmail address
+ */
+export async function sendVerificationCodeEmail(email, code, fullName = '') {
+  try {
+    const res = await fetch('/.netlify/functions/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'verification_code',
+        email,
+        code,
+        fullName,
+      }),
+    })
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}))
+      console.warn('Verification code email error:', res.status, errData)
+      return { success: false, error: errData.error || `HTTP ${res.status}` }
+    }
+
+    const data = await res.json()
+    console.log('Verification code email dispatched successfully:', data)
+    return { success: true, data }
+  } catch (err) {
+    console.warn('Network or server error dispatching verification code:', err)
+    return { success: false, error: err.message }
+  }
+}
+
+/**
+ * Dispatch welcome email once Gmail verification is complete
+ */
+export async function sendWelcomeVerifiedEmail(email, fullName = '') {
+  try {
+    const res = await fetch('/.netlify/functions/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'welcome_verified',
+        email,
+        fullName,
+      }),
+    })
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}))
+      return { success: false, error: errData.error || `HTTP ${res.status}` }
+    }
+
+    const data = await res.json()
+    return { success: true, data }
+  } catch (err) {
+    return { success: false, error: err.message }
+  }
+}
+
+/**
+ * Dispatch a promotional campaign to all/selected client emails
+ */
+export async function sendPromotionalBroadcast({
+  recipients,
+  subject,
+  headline,
+  message,
+  couponCode,
+  buttonText,
+  buttonLink,
+}) {
+  try {
+    const res = await fetch('/.netlify/functions/send-email', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        type: 'promotional_broadcast',
+        recipients,
+        subject,
+        headline,
+        message,
+        couponCode,
+        buttonText,
+        buttonLink,
+      }),
+    })
+
+    if (!res.ok) {
+      const errData = await res.json().catch(() => ({}))
+      console.warn('Broadcast email error:', res.status, errData)
+      return { success: false, error: errData.error || `HTTP ${res.status}` }
+    }
+
+    const data = await res.json()
+    console.log('Promotional broadcast sent successfully:', data)
+    return { success: true, data }
+  } catch (err) {
+    console.warn('Network error during promotional broadcast:', err)
     return { success: false, error: err.message }
   }
 }

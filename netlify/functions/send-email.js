@@ -86,7 +86,7 @@ function buildClientConfirmationEmail(order) {
             Order Authenticated
           </div>
           <h2 style="margin: 0; font-family: Georgia, serif; font-size: 22px; color: #ffffff;">
-            Thank you, ${order.client.fullName || 'Collector'}
+            Thank you, ${order.client?.fullName || 'Collector'}
           </h2>
           <p style="margin: 8px 0 0; font-size: 13px; color: #b5ad9e; line-height: 1.5;">
             Your vintage selection has been reserved. Our atelier concierge is conducting quality inspection and archival wrapping before courier dispatch.
@@ -132,11 +132,11 @@ function buildClientConfirmationEmail(order) {
               Courier Dispatch Destination
             </h4>
             <div style="font-size: 13px; color: #d0c8bd; line-height: 1.6;">
-              <div><strong>Recipient:</strong> ${order.client.fullName}</div>
-              <div><strong>Address:</strong> ${order.client.address}, ${order.client.city}</div>
-              <div><strong>Phone:</strong> ${order.client.phone}</div>
+              <div><strong>Recipient:</strong> ${order.client?.fullName}</div>
+              <div><strong>Address:</strong> ${order.client?.address}, ${order.client?.city}</div>
+              <div><strong>Phone:</strong> ${order.client?.phone}</div>
               <div><strong>Payment Mode:</strong> ${paymentText}</div>
-              ${order.client.notes ? `<div><strong>Notes:</strong> ${order.client.notes}</div>` : ''}
+              ${order.client?.notes ? `<div><strong>Notes:</strong> ${order.client.notes}</div>` : ''}
             </div>
           </div>
 
@@ -175,7 +175,7 @@ function buildAdminAlertEmail(order) {
         <div style="padding: 24px;">
           <div style="background-color: #1f1d19; border: 1px solid #3d3429; border-radius: 8px; padding: 16px; margin-bottom: 20px;">
             <div style="font-size: 20px; color: #f5f3ef; font-weight: bold; margin-bottom: 6px;">
-              ${order.client.fullName} placed an order for <span style="color: #d4af37;">${formatCurrency(order.total)}</span>
+              ${order.client?.fullName} placed an order for <span style="color: #d4af37;">${formatCurrency(order.total)}</span>
             </div>
             <div style="font-size: 13px; color: #a39c91;">
               Placed on: ${new Date(order.createdAt).toLocaleString()} &bull; Payment: <strong>${paymentText}</strong>
@@ -188,27 +188,27 @@ function buildAdminAlertEmail(order) {
           <table style="width: 100%; border-collapse: collapse; font-size: 13px; margin-bottom: 20px; background-color: #191a1d; border-radius: 6px;">
             <tr>
               <td style="padding: 8px 12px; color: #8e877a; width: 130px; border-bottom: 1px solid #262422;">Client Name:</td>
-              <td style="padding: 8px 12px; color: #f5f3ef; font-weight: 600; border-bottom: 1px solid #262422;">${order.client.fullName}</td>
+              <td style="padding: 8px 12px; color: #f5f3ef; font-weight: 600; border-bottom: 1px solid #262422;">${order.client?.fullName}</td>
             </tr>
             <tr>
               <td style="padding: 8px 12px; color: #8e877a; border-bottom: 1px solid #262422;">Phone (Courier):</td>
               <td style="padding: 8px 12px; color: #d4af37; font-family: monospace; font-weight: bold; border-bottom: 1px solid #262422;">
-                <a href="tel:${order.client.phone}" style="color: #d4af37; text-decoration: none;">${order.client.phone}</a>
+                <a href="tel:${order.client?.phone}" style="color: #d4af37; text-decoration: none;">${order.client?.phone}</a>
               </td>
             </tr>
             <tr>
               <td style="padding: 8px 12px; color: #8e877a; border-bottom: 1px solid #262422;">Email:</td>
-              <td style="padding: 8px 12px; color: #cfc8be; font-family: monospace; border-bottom: 1px solid #262422;">${order.client.email || 'None provided'}</td>
+              <td style="padding: 8px 12px; color: #cfc8be; font-family: monospace; border-bottom: 1px solid #262422;">${order.client?.email || 'None provided'}</td>
             </tr>
             <tr>
               <td style="padding: 8px 12px; color: #8e877a; border-bottom: 1px solid #262422;">Street Address:</td>
-              <td style="padding: 8px 12px; color: #f5f3ef; border-bottom: 1px solid #262422;">${order.client.address}</td>
+              <td style="padding: 8px 12px; color: #f5f3ef; border-bottom: 1px solid #262422;">${order.client?.address}</td>
             </tr>
             <tr>
               <td style="padding: 8px 12px; color: #8e877a; border-bottom: 1px solid #262422;">City:</td>
-              <td style="padding: 8px 12px; color: #f5f3ef; font-weight: 600; border-bottom: 1px solid #262422;">${order.client.city}</td>
+              <td style="padding: 8px 12px; color: #f5f3ef; font-weight: 600; border-bottom: 1px solid #262422;">${order.client?.city}</td>
             </tr>
-            ${order.client.notes ? `
+            ${order.client?.notes ? `
               <tr>
                 <td style="padding: 8px 12px; color: #8e877a;">Special Notes:</td>
                 <td style="padding: 8px 12px; color: #e2d9cc;">${order.client.notes}</td>
@@ -223,13 +223,6 @@ function buildAdminAlertEmail(order) {
 
           <div style="background-color: #1a1a1c; border: 1px solid #2d261e; padding: 14px; border-radius: 8px; text-align: right; font-size: 15px;">
             Total Payable: <strong style="color: #d4af37; font-family: monospace; font-size: 18px;">${formatCurrency(order.total)}</strong>
-          </div>
-
-          <div style="margin-top: 24px; text-align: center;">
-            <p style="color: #8e877a; font-size: 12px; margin-bottom: 8px;">Log into the Thrift Aura Admin CRM to fulfill and dispatch this order:</p>
-            <div style="display: inline-block; background-color: #d4af37; color: #0c0d0e; font-size: 13px; font-weight: bold; padding: 10px 20px; border-radius: 6px; letter-spacing: 1px; text-transform: uppercase;">
-              Action: Open Admin CRM &bull; Orders Tab
-            </div>
           </div>
         </div>
 
@@ -318,15 +311,9 @@ function buildStatusUpdateEmail(order, newStatus, trackingInfo) {
 
           <!-- Delivery Address Recap -->
           <div style="background-color: #17181a; border: 1px solid #2d261e; border-radius: 10px; padding: 16px; margin-bottom: 20px; font-size: 13px; color: #b5ad9e;">
-            <strong style="color: #f5f3ef;">Delivering To:</strong> ${order.client.fullName} &bull; ${order.client.address}, ${order.client.city}
+            <strong style="color: #f5f3ef;">Delivering To:</strong> ${order.client?.fullName} &bull; ${order.client?.address}, ${order.client?.city}
             <br />
             <strong style="color: #f5f3ef;">Payable at Door:</strong> <span style="color: #d4af37; font-family: monospace; font-weight: bold;">${formatCurrency(order.total)}</span>
-          </div>
-
-          <div style="text-align: center; margin-top: 20px;">
-            <p style="font-size: 12px; color: #7d7568;">
-              Questions regarding this delivery? Simply reply to this email or contact <a href="mailto:${OWNER_EMAIL}" style="color: #d4af37; text-decoration: none;">${OWNER_EMAIL}</a>.
-            </p>
           </div>
         </div>
 
@@ -339,8 +326,148 @@ function buildStatusUpdateEmail(order, newStatus, trackingInfo) {
   `;
 }
 
+// ─── Scenario 3: Gmail Verification Code (OTP) ───
+function buildVerificationEmail(code, fullName) {
+  return `
+    <div style="background-color: #0c0d0e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e7e3dc; padding: 32px 16px;">
+      <div style="max-width: 540px; margin: 0 auto; background-color: #141517; border: 1px solid #2d261e; border-radius: 16px; overflow: hidden; box-shadow: 0 10px 30px rgba(0,0,0,0.5);">
+        
+        <div style="background: linear-gradient(180deg, #1f1d1a 0%, #141517 100%); padding: 32px 24px 20px; text-align: center; border-bottom: 1px solid #2d261e;">
+          <h1 style="margin: 0; font-family: Georgia, serif; font-size: 26px; font-weight: normal; letter-spacing: 4px; color: #f5f3ef; text-transform: uppercase;">
+            Thrift <span style="color: #d4af37; font-style: italic;">Aura</span>
+          </h1>
+          <p style="margin: 6px 0 0; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #a39c91;">
+            Collector Account Verification
+          </p>
+        </div>
+
+        <div style="padding: 32px 24px; text-align: center;">
+          <div style="display: inline-block; background-color: rgba(212, 175, 55, 0.12); color: #d4af37; border: 1px solid rgba(212, 175, 55, 0.35); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; padding: 4px 14px; border-radius: 20px; margin-bottom: 16px;">
+            Security Authentication Code
+          </div>
+          <h2 style="margin: 0; font-family: Georgia, serif; font-size: 20px; color: #ffffff;">
+            Verify Your Gmail Address
+          </h2>
+          <p style="margin: 10px 0 24px; font-size: 13px; color: #b5ad9e; line-height: 1.6; max-width: 440px; margin-left: auto; margin-right: auto;">
+            Hello ${fullName || 'Collector'}, enter the 6-digit verification code below to verify your Gmail address and activate your archival collector account:
+          </p>
+
+          <div style="font-size: 38px; font-weight: bold; font-family: 'Courier New', monospace; letter-spacing: 12px; color: #d4af37; background-color: #1a1a1c; border: 2px dashed rgba(212, 175, 55, 0.4); padding: 18px 24px; border-radius: 12px; margin: 0 auto 24px; max-width: 320px; text-align: center;">
+            ${code}
+          </div>
+
+          <p style="margin: 0; font-size: 12px; color: #8e877a; line-height: 1.5;">
+            This security code will expire in <strong>10 minutes</strong>.<br />
+            If you did not request this verification code, please ignore this email.
+          </p>
+        </div>
+
+        <div style="background-color: #0f1011; border-top: 1px solid #2d261e; padding: 18px 24px; text-align: center; font-size: 11px; color: #6b6459;">
+          Thrift Aura Atelier &bull; Curated Vintage &amp; Archival Collectibles
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
+// ─── Scenario 4: Welcome Verified Client Email ───
+function buildWelcomeVerifiedEmail(fullName) {
+  return `
+    <div style="background-color: #0c0d0e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e7e3dc; padding: 32px 16px;">
+      <div style="max-width: 560px; margin: 0 auto; background-color: #141517; border: 1px solid #2d261e; border-radius: 16px; overflow: hidden;">
+        <div style="background: linear-gradient(180deg, #1f1d1a 0%, #141517 100%); padding: 32px 24px 20px; text-align: center; border-bottom: 1px solid #2d261e;">
+          <h1 style="margin: 0; font-family: Georgia, serif; font-size: 26px; font-weight: normal; letter-spacing: 4px; color: #f5f3ef; text-transform: uppercase;">
+            Thrift <span style="color: #d4af37; font-style: italic;">Aura</span>
+          </h1>
+          <p style="margin: 6px 0 0; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #a39c91;">
+            Collector Membership Activated
+          </p>
+        </div>
+
+        <div style="padding: 32px 24px; text-align: center;">
+          <h2 style="margin: 0 0 12px; font-family: Georgia, serif; font-size: 22px; color: #ffffff;">
+            Welcome to the Atelier, ${fullName || 'Collector'}
+          </h2>
+          <p style="margin: 0 0 24px; font-size: 14px; color: #b5ad9e; line-height: 1.6;">
+            Your Gmail account has been authenticated and linked. You now enjoy priority checkout, automated parcel waybill tracking, and exclusive access to archival releases.
+          </p>
+          <div style="padding: 16px; background-color: #1a1a1c; border: 1px solid #2d261e; border-radius: 10px; margin-bottom: 24px; font-size: 13px; color: #d4af37;">
+            ✓ Insured Courier Dispatch &bull; Real-Time Gmail Notifications Active
+          </div>
+        </div>
+
+        <div style="background-color: #0f1011; border-top: 1px solid #2d261e; padding: 18px 24px; text-align: center; font-size: 11px; color: #6b6459;">
+          Thrift Aura Atelier &bull; Curated Vintage &amp; Archival Fashion
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ─── Scenario 5: Promotional Campaign Broadcast ───
+function buildPromotionalBroadcastEmail({ headline, message, couponCode, buttonText, buttonLink }) {
+  return `
+    <div style="background-color: #0c0d0e; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; color: #e7e3dc; padding: 36px 16px;">
+      <div style="max-width: 600px; margin: 0 auto; background-color: #141517; border: 1px solid #3d3429; border-radius: 16px; overflow: hidden; box-shadow: 0 12px 35px rgba(0,0,0,0.6);">
+        
+        <!-- Header -->
+        <div style="background: linear-gradient(180deg, #1f1d1a 0%, #141517 100%); padding: 36px 28px 24px; text-align: center; border-bottom: 1px solid #2d261e;">
+          <h1 style="margin: 0; font-family: Georgia, serif; font-size: 30px; font-weight: normal; letter-spacing: 5px; color: #f5f3ef; text-transform: uppercase;">
+            Thrift <span style="color: #d4af37; font-style: italic;">Aura</span>
+          </h1>
+          <p style="margin: 6px 0 0; font-size: 11px; letter-spacing: 3px; text-transform: uppercase; color: #a39c91;">
+            Curated Editorial &bull; Archival Private Collection
+          </p>
+        </div>
+
+        <!-- Hero Content -->
+        <div style="padding: 32px 28px;">
+          <div style="display: inline-block; background-color: rgba(212, 175, 55, 0.15); color: #d4af37; border: 1px solid rgba(212, 175, 55, 0.4); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; padding: 5px 16px; border-radius: 20px; margin-bottom: 14px;">
+            Atelier Announcement
+          </div>
+
+          <h2 style="margin: 0 0 16px; font-family: Georgia, serif; font-size: 24px; color: #ffffff; line-height: 1.3;">
+            ${headline || 'Exclusive Archival Release'}
+          </h2>
+
+          <div style="font-size: 14px; color: #cfc8be; line-height: 1.7; margin-bottom: 28px; white-space: pre-line;">
+            ${message}
+          </div>
+
+          ${couponCode ? `
+            <div style="background: linear-gradient(135deg, #1c1a16 0%, #29241d 100%); border: 1px solid #d4af37; border-radius: 12px; padding: 20px; text-align: center; margin-bottom: 28px;">
+              <span style="font-size: 11px; text-transform: uppercase; letter-spacing: 2px; color: #a39c91; display: block; margin-bottom: 6px;">
+                Special Collector Privilege Code
+              </span>
+              <div style="font-family: monospace; font-size: 26px; font-weight: bold; color: #d4af37; letter-spacing: 4px;">
+                ${couponCode}
+              </div>
+              <span style="font-size: 11px; color: #b5ad9e; display: block; margin-top: 6px;">
+                Redeemable at checkout on any archival curation
+              </span>
+            </div>
+          ` : ''}
+
+          <div style="text-align: center; margin-bottom: 16px;">
+            <a href="${buttonLink || 'https://thriftaura.store/shop'}" style="display: inline-block; background-color: #d4af37; color: #0c0d0e; font-size: 13px; font-weight: bold; text-transform: uppercase; letter-spacing: 2px; padding: 14px 32px; border-radius: 8px; text-decoration: none;">
+              ${buttonText || 'Explore Archive Now'}
+            </a>
+          </div>
+        </div>
+
+        <!-- Footer -->
+        <div style="background-color: #0f1011; border-top: 1px solid #2d261e; padding: 20px 28px; text-align: center; font-size: 11px; color: #6b6459;">
+          <p style="margin: 0 0 6px;">You are receiving this private communication as a verified Thrift Aura collector.</p>
+          <p style="margin: 0;">Thrift Aura Atelier &bull; Curated Vintage &amp; Archival Collectibles</p>
+        </div>
+
+      </div>
+    </div>
+  `;
+}
+
 export async function handler(event) {
-  // CORS headers
   const headers = {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Headers': 'Content-Type',
@@ -358,27 +485,28 @@ export async function handler(event) {
 
   try {
     const payload = typeof event.body === 'string' ? JSON.parse(event.body || '{}') : (event.body || {});
-    const { type, order, newStatus, trackingInfo } = payload;
-
-    if (!order) {
-      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing order data' }) };
-    }
+    const { type } = payload;
 
     const dispatches = [];
 
-    // --- Scenario 1: New Order Placed ---
+    // ─── 1. New Order Placed ───
     if (type === 'new_order') {
-      // 1. Notify Store Owner / Admin
+      const { order } = payload;
+      if (!order) {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing order data' }) };
+      }
+
+      // Notify Store Owner
       dispatches.push(
         transporter.sendMail({
           from: `"Thrift Aura Atelier" <${OWNER_EMAIL}>`,
           to: OWNER_EMAIL,
-          subject: `⚡ NEW ORDER • ${order.id} - ${formatCurrency(order.total)} (${order.client.fullName})`,
+          subject: `⚡ NEW ORDER • ${order.id} - ${formatCurrency(order.total)} (${order.client?.fullName})`,
           html: buildAdminAlertEmail(order),
         })
       );
 
-      // 2. Notify Client if email provided
+      // Notify Client if email provided
       if (order.client?.email && order.client.email.includes('@')) {
         dispatches.push(
           transporter.sendMail({
@@ -391,11 +519,15 @@ export async function handler(event) {
       }
     }
 
-    // --- Scenario 2: Admin Advances Order Status ---
+    // ─── 2. Order Status Update ───
     else if (type === 'status_update') {
+      const { order, newStatus, trackingInfo } = payload;
+      if (!order) {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing order data' }) };
+      }
+
       const statusLabel = newStatus || order.status || 'Updated';
 
-      // 1. Send update to client
       if (order.client?.email && order.client.email.includes('@')) {
         dispatches.push(
           transporter.sendMail({
@@ -407,15 +539,92 @@ export async function handler(event) {
         );
       }
 
-      // 2. Send status confirmation copy to Admin
       dispatches.push(
         transporter.sendMail({
           from: `"Thrift Aura Atelier" <${OWNER_EMAIL}>`,
           to: OWNER_EMAIL,
-          subject: `Status Updated: #${order.id} ➔ ${statusLabel} (${order.client.fullName})`,
+          subject: `Status Updated: #${order.id} ➔ ${statusLabel} (${order.client?.fullName})`,
           html: buildStatusUpdateEmail(order, statusLabel, trackingInfo),
         })
       );
+    }
+
+    // ─── 3. Gmail Verification Code (OTP) ───
+    else if (type === 'verification_code') {
+      const { email, code, fullName } = payload;
+      if (!email || !code) {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing email or code' }) };
+      }
+
+      dispatches.push(
+        transporter.sendMail({
+          from: `"Thrift Aura Atelier" <${OWNER_EMAIL}>`,
+          to: email,
+          subject: `Thrift Aura • Your Verification Code: ${code}`,
+          html: buildVerificationEmail(code, fullName),
+        })
+      );
+    }
+
+    // ─── 4. Welcome Verified Email ───
+    else if (type === 'welcome_verified') {
+      const { email, fullName } = payload;
+      if (!email) {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: 'Missing email' }) };
+      }
+
+      dispatches.push(
+        transporter.sendMail({
+          from: `"Thrift Aura Atelier" <${OWNER_EMAIL}>`,
+          to: email,
+          subject: `Thrift Aura Atelier • Welcome & Account Activated`,
+          html: buildWelcomeVerifiedEmail(fullName),
+        })
+      );
+    }
+
+    // ─── 5. Promotional Broadcast to All/Selected Clients ───
+    else if (type === 'promotional_broadcast') {
+      const { recipients, subject, headline, message, couponCode, buttonText, buttonLink } = payload;
+      if (!recipients || !Array.isArray(recipients) || recipients.length === 0) {
+        return { statusCode: 400, headers, body: JSON.stringify({ error: 'No recipients provided' }) };
+      }
+
+      const emailHtml = buildPromotionalBroadcastEmail({
+        headline,
+        message,
+        couponCode,
+        buttonText,
+        buttonLink,
+      });
+
+      // Send to each recipient in parallel / batch
+      for (const email of recipients) {
+        if (email && email.includes('@')) {
+          dispatches.push(
+            transporter.sendMail({
+              from: `"Thrift Aura Atelier" <${OWNER_EMAIL}>`,
+              to: email,
+              subject: subject || 'Thrift Aura Atelier • Private Archive Drop',
+              html: emailHtml,
+            })
+          );
+        }
+      }
+
+      // Also send a copy to Admin/Owner
+      dispatches.push(
+        transporter.sendMail({
+          from: `"Thrift Aura Atelier" <${OWNER_EMAIL}>`,
+          to: OWNER_EMAIL,
+          subject: `[ADMIN BROADCAST COPY] ${subject || 'Promotional Campaign'} (Sent to ${recipients.length} clients)`,
+          html: emailHtml,
+        })
+      );
+    }
+
+    else {
+      return { statusCode: 400, headers, body: JSON.stringify({ error: 'Invalid email notification type' }) };
     }
 
     const results = await Promise.allSettled(dispatches);

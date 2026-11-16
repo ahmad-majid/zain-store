@@ -91,10 +91,13 @@ export default function Navbar() {
 
             {user ? (
               <div className="flex items-center gap-3">
+                <span className="hidden sm:inline-block font-sans text-[10px] uppercase tracking-wider text-aura-dark font-bold px-2 py-0.5 rounded-full bg-aura-gold/15 border border-aura-gold/30 max-w-[140px] truncate" title={user.email}>
+                  {user.user_metadata?.full_name || user.email.split('@')[0]}
+                </span>
                 {profile?.role === 'admin' && (
                   <Link
                     to="/admin"
-                    className="hidden sm:block font-sans text-[10px] tracking-widest uppercase bg-aura-gold/20 text-aura-dark px-2.5 py-1 rounded-sm font-semibold hover:bg-aura-gold transition-colors"
+                    className="hidden sm:block font-sans text-[10px] tracking-widest uppercase bg-aura-dark text-cream-100 px-2.5 py-1 rounded-lg font-semibold hover:bg-aura-gold hover:text-aura-dark transition-colors"
                   >
                     CRM Panel
                   </Link>

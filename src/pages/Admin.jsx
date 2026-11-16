@@ -3,10 +3,12 @@ import { useNavigate, Link } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import { useStoreSettings } from '../context/StoreSettingsContext'
 import OrdersCRM from '../components/admin/OrdersCRM'
+import ClientsCRM from '../components/admin/ClientsCRM'
+import PromotionsCRM from '../components/admin/PromotionsCRM'
 import {
   Package, Megaphone, Sparkles, Navigation, Percent, Image, FolderTree, BookOpen,
   Plus, Trash2, Edit3, Save, RotateCcw, Check, Upload, ExternalLink, Video, Eye,
-  CheckCircle2, Flame, Tag, Layers, X, ChevronDown, ShoppingBag
+  CheckCircle2, Flame, Tag, Layers, X, ChevronDown, ShoppingBag, Users, Mail
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -21,6 +23,7 @@ export default function Admin() {
   const navigate = useNavigate()
   const [activeTab, setActiveTab] = useState('orders')
   const [savedNotice, setSavedNotice] = useState(false)
+  const [targetPromoEmail, setTargetPromoEmail] = useState(null)
 
   // Guard: only admins may access this page
   useEffect(() => {
@@ -350,7 +353,9 @@ export default function Admin() {
         {/* Tab Selector Navigation */}
         <div className="flex items-center gap-2 overflow-x-auto pb-4 mb-8 scroll-row border-b border-aura-dark/10">
           {[
-            { id: 'orders', label: 'Client Orders & CRM', icon: ShoppingBag },
+            { id: 'orders', label: 'Client Orders', icon: ShoppingBag },
+            { id: 'clients', label: 'Client Records', icon: Users },
+            { id: 'promotions', label: 'Promotions & Broadcast', icon: Mail },
             { id: 'inventory', label: 'Archival Products', icon: Package, count: products.length },
             { id: 'announcement', label: 'Announcement Bar', icon: Megaphone, badge: settings.announcement?.enabled ? 'ON' : 'OFF' },
             { id: 'hero', label: 'Hero Showcase', icon: Sparkles },
@@ -391,6 +396,23 @@ export default function Admin() {
 
         {activeTab === 'orders' && (
           <OrdersCRM onNotify={showSaveSuccess} />
+        )}
+
+        {activeTab === 'clients' && (
+          <ClientsCRM
+            onSelectClientForPromo={(email) => {
+              setTargetPromoEmail(email)
+              setActiveTab('promotions')
+            }}
+            onNotify={showSaveSuccess}
+          />
+        )}
+
+        {activeTab === 'promotions' && (
+          <PromotionsCRM
+            targetEmail={targetPromoEmail}
+            onNotify={showSaveSuccess}
+          />
         )}
 
         {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

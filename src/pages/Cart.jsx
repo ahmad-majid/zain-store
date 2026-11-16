@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useCart } from '../context/CartContext'
 import { useAuth } from '../context/AuthContext'
@@ -24,6 +24,7 @@ export default function Cart() {
 
   // Checkout modal & state
   const [checkoutOpen, setCheckoutOpen] = useState(false)
+  const [authPromptOpen, setAuthPromptOpen] = useState(false)
   const [confirmedOrder, setConfirmedOrder] = useState(null)
   const [copied, setCopied] = useState(false)
 
@@ -31,13 +32,41 @@ export default function Cart() {
   const [form, setForm] = useState({
     fullName: user?.user_metadata?.full_name || '',
     email: user?.email || '',
-    phone: '',
+    phone: user?.user_metadata?.phone || '',
     address: '',
     city: '',
     notes: '',
     paymentMethod: 'cod', // cod | card
   })
   const setField = (k, v) => setForm((p) => ({ ...p, [k]: v }))
+
+  // Sync user details when authenticated
+  useEffect(() => {
+    if (user) {
+      setForm((p) => ({
+        ...p,
+        fullName: p.fullName || user.user_metadata?.full_name || '',
+        email: user.email || p.email,
+        phone: p.phone || user.user_metadata?.phone || '',
+      }))
+    }
+  }, [user])
+
+  // Automatically trigger checkout drawer if returning from auth
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('checkout') === 'true' && user) {
+      setCheckoutOpen(true)
+    }
+  }, [user])
+
+  const handleProceedToCheckout = () => {
+    if (!user) {
+      setAuthPromptOpen(true)
+      return
+    }
+    setCheckoutOpen(true)
+  }
 
   // Calculate discount based on active CRM coupons
   let discountAmount = 0
@@ -108,6 +137,39 @@ export default function Cart() {
       localStorage.setItem('thrift-aura-orders', JSON.stringify([newOrder, ...existing]))
     } catch (err) {
       console.warn('Failed saving order to local storage', err)
+    }
+
+    // Update Client metrics in Client CRM Registry
+    try {
+      const clients = JSON.parse(localStorage.getItem('thrift-aura-clients') || '[]')
+      const clientEmail = (form.email || user?.email || '').trim().toLowerCase()
+      const existingIdx = clients.findIndex((c) => c.email.toLowerCase() === clientEmail)
+      if (existingIdx >= 0) {
+        clients[existingIdx].ordersCount = (clients[existingIdx].ordersCount || 0) + 1
+        clients[existingIdx].totalSpend = (clients[existingIdx].totalSpend || 0) + finalTotal
+        clients[existingIdx].lastOrderDate = new Date().toISOString()
+        clients[existingIdx].phone = form.phone || clients[existingIdx].phone
+        clients[existingIdx].address = form.address || clients[existingIdx].address
+        clients[existingIdx].city = form.city || clients[existingIdx].city
+      } else {
+        clients.unshift({
+          id: user?.id || `cl-${Date.now()}`,
+          email: clientEmail,
+          fullName: form.fullName || user?.user_metadata?.full_name || 'Collector',
+          phone: form.phone,
+          isVerified: true,
+          verifiedAt: new Date().toISOString(),
+          registeredAt: new Date().toISOString(),
+          ordersCount: 1,
+          totalSpend: finalTotal,
+          lastOrderDate: new Date().toISOString(),
+          address: form.address,
+          city: form.city,
+        })
+      }
+      localStorage.setItem('thrift-aura-clients', JSON.stringify(clients))
+    } catch (err) {
+      console.warn('Failed updating client record', err)
     }
 
     // Trigger Real-Time Gmail Notifications (Client Confirmation + Store Owner Alert)
@@ -503,7 +565,7 @@ export default function Cart() {
 
               {/* Checkout Trigger */}
               <button
-                onClick={() => setCheckoutOpen(true)}
+                onClick={handleProceedToCheckout}
                 className="w-full py-4 bg-aura-dark hover:bg-aura-gold hover:text-aura-dark text-cream-100 rounded-lg text-xs font-sans tracking-[0.25em] uppercase font-semibold transition-all duration-300 flex items-center justify-center gap-2 shadow-lg"
               >
                 <span>Proceed to Checkout</span>
@@ -590,17 +652,25 @@ export default function Cart() {
                   </div>
 
                   <div>
-                    <label className="font-semibold uppercase tracking-wider block mb-1 text-aura-dark/80">
-                      Email Address (For Real-Time Order &amp; Courier Tracking) <span className="text-red-500">*</span>
-                    </label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="font-semibold uppercase tracking-wider block text-aura-dark/80">
+                        Authenticated Gmail Address <span className="text-red-500">*</span>
+                      </label>
+                      <span className="inline-flex items-center gap-1 text-[10px] text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-300 font-semibold">
+                        <Check size={11} className="text-emerald-700" />
+                        <span>Verified Account</span>
+                      </span>
+                    </div>
                     <input
                       type="email"
                       required
+                      readOnly
                       value={form.email}
-                      onChange={(e) => setField('email', e.target.value)}
-                      placeholder="collector@domain.com"
-                      className="w-full px-3.5 py-2.5 bg-white border border-aura-dark/15 rounded-xl focus:outline-none focus:border-aura-gold"
+                      className="w-full px-3.5 py-2.5 bg-cream-100 border border-aura-dark/15 rounded-xl font-mono text-aura-dark cursor-not-allowed select-none"
                     />
+                    <p className="text-[10px] text-aura-muted mt-1">
+                      Official order receipt &amp; courier tracking updates will be dispatched to this Gmail.
+                    </p>
                   </div>
                 </div>
 
@@ -751,6 +821,62 @@ export default function Cart() {
                   </button>
                 </div>
               </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* ─── Client Login Required Modal for Checkout ─── */}
+      <AnimatePresence>
+        {authPromptOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-aura-dark/75 backdrop-blur-sm overflow-y-auto">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-white rounded-3xl border border-aura-gold/40 shadow-2xl w-full max-w-md p-6 sm:p-8 text-center my-auto overflow-hidden relative"
+            >
+              <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-aura-gold/40 via-aura-gold to-aura-gold/40" />
+
+              <div className="w-14 h-14 rounded-full bg-aura-gold/15 text-aura-gold flex items-center justify-center mx-auto mb-4">
+                <ShieldCheck size={28} />
+              </div>
+
+              <span className="font-sans text-[10px] uppercase tracking-[0.25em] text-aura-gold font-bold block mb-1">
+                Archival Checkout Protocol
+              </span>
+              <h3 className="font-serif text-2xl text-aura-dark mb-2">
+                Collector Authentication Required
+              </h3>
+              <p className="font-sans text-xs text-aura-dark/70 leading-relaxed mb-6">
+                To guarantee insured courier delivery, real-time Gmail notifications, and archival authentication, please sign in or register with your verified Gmail address.
+              </p>
+
+              <div className="space-y-3 font-sans text-xs">
+                <Link
+                  to="/auth?redirect=/cart&checkout=true"
+                  className="w-full py-3.5 bg-aura-dark hover:bg-aura-gold hover:text-aura-dark text-cream-100 rounded-xl tracking-wider uppercase font-semibold transition-all flex items-center justify-center gap-2 shadow-md"
+                >
+                  <Mail size={14} />
+                  <span>Sign In with Verified Gmail</span>
+                </Link>
+
+                <Link
+                  to="/auth?mode=signup&redirect=/cart&checkout=true"
+                  className="w-full py-3.5 bg-cream-100 hover:bg-cream-200 text-aura-dark border border-aura-dark/20 rounded-xl tracking-wider uppercase font-semibold transition-all flex items-center justify-center gap-2"
+                >
+                  <Sparkles size={14} className="text-aura-gold" />
+                  <span>Create Collector Account (Instant Gmail OTP)</span>
+                </Link>
+
+                <button
+                  type="button"
+                  onClick={() => setAuthPromptOpen(false)}
+                  className="pt-2 text-[11px] text-aura-muted hover:text-aura-dark underline block mx-auto"
+                >
+                  Return to Cart
+                </button>
+              </div>
             </motion.div>
           </div>
         )}
