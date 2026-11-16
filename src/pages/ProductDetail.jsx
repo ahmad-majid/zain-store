@@ -78,7 +78,11 @@ export default function ProductDetail() {
 
   // Keyboard navigation for Lightbox
   useEffect(() => {
-    if (!lightboxOpen) return
+    if (!lightboxOpen) {
+      document.body.style.overflow = 'unset'
+      return
+    }
+    document.body.style.overflow = 'hidden'
     const handleKeyDown = (e) => {
       if (e.key === 'Escape') {
         setLightboxOpen(false)
@@ -90,7 +94,10 @@ export default function ProductDetail() {
       }
     }
     window.addEventListener('keydown', handleKeyDown)
-    return () => window.removeEventListener('keydown', handleKeyDown)
+    return () => {
+      document.body.style.overflow = 'unset'
+      window.removeEventListener('keydown', handleKeyDown)
+    }
   }, [lightboxOpen, activeImages.length])
 
   const angles = [

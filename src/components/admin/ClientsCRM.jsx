@@ -77,6 +77,23 @@ export default function ClientsCRM({ onSelectClientForPromo, onNotify }) {
     return () => window.removeEventListener('focus', loadClients)
   }, [])
 
+  // Lock background body scroll and bind Escape key whenever modal is open
+  useEffect(() => {
+    if (selectedClient) {
+      document.body.style.overflow = 'hidden'
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') setSelectedClient(null)
+      }
+      window.addEventListener('keydown', handleKeyDown)
+      return () => {
+        document.body.style.overflow = 'unset'
+        window.removeEventListener('keydown', handleKeyDown)
+      }
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+  }, [selectedClient])
+
   // KPI Calculations
   const totalClients = clients.length
   const totalLifetimeValue = clients.reduce((sum, c) => sum + (Number(c.totalSpend) || 0), 0)
@@ -412,14 +429,21 @@ export default function ClientsCRM({ onSelectClientForPromo, onNotify }) {
       {/* ─── Client Profile Inspection Modal ─── */}
       <AnimatePresence>
         {selectedClient && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-aura-dark/70 backdrop-blur-sm overflow-y-auto">
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-aura-dark/80 backdrop-blur-sm overflow-hidden"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setSelectedClient(null)
+            }}
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="bg-cream-50 rounded-3xl border border-aura-gold/40 shadow-2xl w-full max-w-lg overflow-hidden my-auto"
+              className="bg-cream-50 rounded-3xl border border-aura-gold/40 shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col overflow-hidden relative"
+              onClick={(e) => e.stopPropagation()}
             >
-              <div className="flex items-center justify-between px-6 py-4 border-b border-aura-dark/10 bg-white/70">
+              {/* Pinned Header */}
+              <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-aura-dark/10 bg-white/90 backdrop-blur-md">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-full bg-aura-dark text-aura-gold flex items-center justify-center font-bold text-xs">
                     {(selectedClient.fullName || 'C')[0]}
@@ -432,14 +456,16 @@ export default function ClientsCRM({ onSelectClientForPromo, onNotify }) {
                   </div>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setSelectedClient(null)}
-                  className="p-1.5 rounded-lg hover:bg-cream-200 text-aura-muted hover:text-aura-dark"
+                  className="p-1.5 rounded-lg hover:bg-cream-200 text-aura-muted hover:text-aura-dark transition-colors"
                 >
                   <X size={18} />
                 </button>
               </div>
 
-              <div className="p-6 space-y-4 text-xs font-sans">
+              {/* Scrollable Modal Interior */}
+              <div className="flex-1 overflow-y-auto overscroll-contain p-6 space-y-4 text-xs font-sans">
                 <div className="grid grid-cols-2 gap-3 p-4 bg-white rounded-2xl border border-aura-dark/10">
                   <div>
                     <span className="text-[10px] text-aura-muted uppercase tracking-wider block">Gmail Address</span>
@@ -476,8 +502,10 @@ export default function ClientsCRM({ onSelectClientForPromo, onNotify }) {
                 </div>
               </div>
 
-              <div className="flex items-center justify-between px-6 py-4 border-t border-aura-dark/10 bg-white/70">
+              {/* Pinned Footer */}
+              <div className="shrink-0 flex items-center justify-between px-6 py-4 border-t border-aura-dark/10 bg-white/90 backdrop-blur-md">
                 <button
+                  type="button"
                   onClick={() => {
                     const email = selectedClient.email
                     setSelectedClient(null)
@@ -489,6 +517,7 @@ export default function ClientsCRM({ onSelectClientForPromo, onNotify }) {
                   <span>Send Promotional Email</span>
                 </button>
                 <button
+                  type="button"
                   onClick={() => setSelectedClient(null)}
                   className="btn-outline py-2 px-4 text-xs"
                 >

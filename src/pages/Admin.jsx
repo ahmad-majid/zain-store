@@ -40,6 +40,29 @@ export default function Admin() {
   const [lookbookModal, setLookbookModal] = useState(false)
   const [categoryModal, setCategoryModal] = useState(false)
 
+  // Lock background body scroll and bind Escape key whenever any modal is open
+  useEffect(() => {
+    if (productModal || couponModal || campaignModal || lookbookModal || categoryModal) {
+      document.body.style.overflow = 'hidden'
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          closeProductModal()
+          setCouponModal(false)
+          setCampaignModal(false)
+          setLookbookModal(false)
+          setCategoryModal(false)
+        }
+      }
+      window.addEventListener('keydown', handleKeyDown)
+      return () => {
+        document.body.style.overflow = 'unset'
+        window.removeEventListener('keydown', handleKeyDown)
+      }
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+  }, [productModal, couponModal, campaignModal, lookbookModal, categoryModal])
+
   // â”€â”€ Product form state (fully controlled, supports N colorways Ã— 4 images) â”€â”€
   const BLANK_COLOR = () => ({ name: '', hex: '#b8860b', images: ['', '', '', ''] })
   const BLANK_PRODUCT_FORM = {
@@ -1499,13 +1522,19 @@ export default function Admin() {
         {/* ─── Add/Edit Product Modal (Multi-Colorway) ─── */}
         <AnimatePresence>
           {productModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-aura-dark/70 backdrop-blur-sm">
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-aura-dark/80 backdrop-blur-sm overflow-hidden"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) closeProductModal()
+              }}
+            >
               <motion.div
-                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                initial={{ opacity: 0, scale: 0.95, y: 15 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                exit={{ opacity: 0, scale: 0.95, y: 15 }}
                 transition={{ duration: 0.2 }}
-                className="bg-cream-50 rounded-2xl border border-aura-gold/30 shadow-2xl w-full max-w-3xl max-h-[92vh] flex flex-col"
+                className="bg-cream-50 rounded-3xl border border-aura-gold/40 shadow-2xl w-full max-w-3xl max-h-[90vh] flex flex-col overflow-hidden relative"
+                onClick={(e) => e.stopPropagation()}
               >
                 {/* Modal Header */}
                 <div className="flex items-center justify-between px-6 py-4 border-b border-aura-dark/10 shrink-0">
@@ -1528,7 +1557,7 @@ export default function Admin() {
                 </div>
 
                 {/* Scrollable Body */}
-                <div className="overflow-y-auto flex-1 px-6 py-5 space-y-5 font-sans text-xs">
+                <div className="overflow-y-auto overscroll-contain flex-1 px-6 py-5 space-y-5 font-sans text-xs">
 
                   {/* ── Section 1: Basic Info ── */}
                   <div className="rounded-xl bg-white border border-aura-dark/8 p-4 space-y-4">
@@ -1827,24 +1856,31 @@ export default function Admin() {
             </div>
           )}
         </AnimatePresence>
-        {/* â”€â”€â”€ Create Coupon Modal â”€â”€â”€ */}
+        {/* ─── Create Coupon Modal ─── */}
         <AnimatePresence>
           {couponModal && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-aura-dark/60 backdrop-blur-sm">
+            <div
+              className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-aura-dark/80 backdrop-blur-sm overflow-hidden"
+              onClick={(e) => {
+                if (e.target === e.currentTarget) setCouponModal(false)
+              }}
+            >
               <motion.div
-                initial={{ opacity: 0, scale: 0.95 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="bg-cream-100 rounded-2xl border border-aura-gold/30 shadow-2xl w-full max-w-md p-6 sm:p-8"
+                initial={{ opacity: 0, scale: 0.95, y: 15 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 15 }}
+                className="bg-cream-100 rounded-3xl border border-aura-gold/40 shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col overflow-hidden relative"
+                onClick={(e) => e.stopPropagation()}
               >
-                <div className="flex items-center justify-between pb-4 mb-4 border-b border-aura-dark/10">
+                {/* Modal Header */}
+                <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-aura-dark/10 bg-white/70 backdrop-blur-sm">
                   <h3 className="font-serif text-2xl text-aura-dark">Create Coupon</h3>
-                  <button onClick={() => setCouponModal(false)} className="p-1 text-aura-muted hover:text-aura-dark">
-                    <X size={20} />
+                  <button onClick={() => setCouponModal(false)} className="p-1.5 rounded-lg hover:bg-cream-200 text-aura-muted hover:text-aura-dark transition-colors">
+                    <X size={18} />
                   </button>
                 </div>
 
-                <form onSubmit={handleAddCoupon} className="space-y-4 text-xs font-sans">
+                <form onSubmit={handleAddCoupon} className="flex-1 overflow-y-auto overscroll-contain p-6 space-y-4 text-xs font-sans">
                   <div>
                     <label className="font-semibold uppercase tracking-wider block mb-1">Coupon Code *</label>
                     <input
@@ -1896,7 +1932,7 @@ export default function Admin() {
                     />
                   </div>
 
-                  <div className="flex justify-end gap-3 pt-4 border-t border-aura-dark/10">
+                  <div className="flex justify-end gap-3 pt-4 border-t border-aura-dark/10 shrink-0">
                     <button type="button" onClick={() => setCouponModal(false)} className="btn-outline py-2.5 px-5 text-xs">
                       Cancel
                     </button>

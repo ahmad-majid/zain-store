@@ -60,6 +60,26 @@ export default function Cart() {
     }
   }, [user])
 
+  // Lock background body scroll and bind Escape key whenever checkout or authPrompt modal is open
+  useEffect(() => {
+    if (checkoutOpen || authPromptOpen) {
+      document.body.style.overflow = 'hidden'
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          setCheckoutOpen(false)
+          setAuthPromptOpen(false)
+        }
+      }
+      window.addEventListener('keydown', handleKeyDown)
+      return () => {
+        document.body.style.overflow = 'unset'
+        window.removeEventListener('keydown', handleKeyDown)
+      }
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+  }, [checkoutOpen, authPromptOpen])
+
   const handleProceedToCheckout = () => {
     if (!user) {
       setAuthPromptOpen(true)
@@ -584,15 +604,21 @@ export default function Cart() {
       {/* ─── Boutique Checkout Drawer / Modal ─── */}
       <AnimatePresence>
         {checkoutOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-aura-dark/75 backdrop-blur-sm overflow-y-auto">
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-aura-dark/80 backdrop-blur-sm overflow-hidden"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setCheckoutOpen(false)
+            }}
+          >
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="bg-cream-50 rounded-3xl border border-aura-gold/40 shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col my-auto overflow-hidden"
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-cream-50 rounded-3xl border border-aura-gold/40 shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden relative"
+              onClick={(e) => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-aura-dark/10 bg-white/60">
+              <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-aura-dark/10 bg-white/70 backdrop-blur-sm">
                 <div className="flex items-center gap-2.5">
                   <div className="w-8 h-8 rounded-full bg-aura-dark text-aura-gold flex items-center justify-center">
                     <Sparkles size={15} />
@@ -613,7 +639,7 @@ export default function Cart() {
               </div>
 
               {/* Form Body */}
-              <form onSubmit={handlePlaceOrder} className="overflow-y-auto p-6 space-y-6 text-xs font-sans">
+              <form onSubmit={handlePlaceOrder} className="flex-1 overflow-y-auto overscroll-contain p-6 space-y-6 text-xs font-sans">
                 {/* Section 1: Client Delivery Information */}
                 <div className="space-y-4">
                   <div className="flex items-center gap-2 text-aura-dark font-semibold uppercase tracking-wider text-[11px]">
@@ -829,12 +855,18 @@ export default function Cart() {
       {/* ─── Client Login Required Modal for Checkout ─── */}
       <AnimatePresence>
         {authPromptOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-aura-dark/75 backdrop-blur-sm overflow-y-auto">
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-aura-dark/80 backdrop-blur-sm overflow-hidden"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setAuthPromptOpen(false)
+            }}
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="bg-white rounded-3xl border border-aura-gold/40 shadow-2xl w-full max-w-md p-6 sm:p-8 text-center my-auto overflow-hidden relative"
+              className="bg-white rounded-3xl border border-aura-gold/40 shadow-2xl w-full max-w-md max-h-[90vh] flex flex-col p-6 sm:p-8 text-center overflow-hidden relative"
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-aura-gold/40 via-aura-gold to-aura-gold/40" />
 

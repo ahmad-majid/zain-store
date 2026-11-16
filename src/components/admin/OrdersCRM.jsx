@@ -123,6 +123,26 @@ export default function OrdersCRM({ onNotify }) {
     return () => window.removeEventListener('focus', loadOrders)
   }, [])
 
+  // Lock background body scroll and bind Escape key whenever any modal is open
+  useEffect(() => {
+    if (statusModalOrder || selectedOrder) {
+      document.body.style.overflow = 'hidden'
+      const handleKeyDown = (e) => {
+        if (e.key === 'Escape') {
+          setStatusModalOrder(null)
+          setSelectedOrder(null)
+        }
+      }
+      window.addEventListener('keydown', handleKeyDown)
+      return () => {
+        document.body.style.overflow = 'unset'
+        window.removeEventListener('keydown', handleKeyDown)
+      }
+    } else {
+      document.body.style.overflow = 'unset'
+    }
+  }, [statusModalOrder, selectedOrder])
+
   // KPI Metrics
   const totalRevenue = orders
     .filter((o) => !o.status?.toLowerCase().includes('cancel'))
@@ -596,15 +616,21 @@ export default function OrdersCRM({ onNotify }) {
       {/* ─── MODAL 1: Advance Order Status & Send Gmail Notification ─── */}
       <AnimatePresence>
         {statusModalOrder && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-aura-dark/65 backdrop-blur-sm overflow-y-auto">
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-aura-dark/80 backdrop-blur-sm overflow-hidden"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setStatusModalOrder(null)
+            }}
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="bg-cream-50 rounded-3xl border border-aura-gold/40 shadow-2xl w-full max-w-xl overflow-hidden my-auto"
+              className="bg-cream-50 rounded-3xl border border-aura-gold/40 shadow-2xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden relative"
+              onClick={(e) => e.stopPropagation()}
             >
-              {/* Modal Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-aura-dark/10 bg-white/70">
+              {/* Pinned Modal Header */}
+              <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-aura-dark/10 bg-white/90 backdrop-blur-md">
                 <div>
                   <span className="font-sans text-[10px] uppercase tracking-[0.25em] text-aura-gold font-bold block">
                     Fulfillment Pipeline
@@ -614,6 +640,7 @@ export default function OrdersCRM({ onNotify }) {
                   </h3>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setStatusModalOrder(null)}
                   className="p-1.5 rounded-lg hover:bg-cream-200 text-aura-muted hover:text-aura-dark transition-colors"
                 >
@@ -621,115 +648,117 @@ export default function OrdersCRM({ onNotify }) {
                 </button>
               </div>
 
-              {/* Modal Form */}
-              <form onSubmit={handleUpdateOrderStatus} className="p-6 space-y-5 text-xs font-sans">
-                {/* Order Summary Recap */}
-                <div className="p-3.5 rounded-xl bg-cream-100 border border-aura-dark/10 flex items-center justify-between">
+              {/* Form with Scrollable Interior Body */}
+              <form onSubmit={handleUpdateOrderStatus} className="flex flex-col flex-1 overflow-hidden">
+                <div className="flex-1 overflow-y-auto overscroll-contain p-6 space-y-5 text-xs font-sans">
+                  {/* Order Summary Recap */}
+                  <div className="p-3.5 rounded-xl bg-cream-100 border border-aura-dark/10 flex items-center justify-between">
+                    <div>
+                      <span className="text-[10px] text-aura-muted uppercase tracking-wider block">Recipient Client</span>
+                      <span className="font-bold text-aura-dark text-sm">{statusModalOrder.client?.fullName}</span>
+                      <span className="text-aura-muted block text-[11px]">{statusModalOrder.client?.city} &bull; {statusModalOrder.client?.phone}</span>
+                    </div>
+                    <div className="text-right">
+                      <span className="text-[10px] text-aura-muted uppercase tracking-wider block">Current Status</span>
+                      <span className="inline-block px-2.5 py-0.5 rounded-full bg-aura-gold/20 text-aura-dark font-bold text-[10px] uppercase border border-aura-gold/30">
+                        {statusModalOrder.status}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Target Status Dropdown */}
                   <div>
-                    <span className="text-[10px] text-aura-muted uppercase tracking-wider block">Recipient Client</span>
-                    <span className="font-bold text-aura-dark text-sm">{statusModalOrder.client?.fullName}</span>
-                    <span className="text-aura-muted block text-[11px]">{statusModalOrder.client?.city} &bull; {statusModalOrder.client?.phone}</span>
+                    <label className="font-semibold uppercase tracking-wider block mb-1 text-aura-dark/80">
+                      New Fulfillment Stage *
+                    </label>
+                    <select
+                      value={statusForm.newStatus}
+                      onChange={(e) => setStatusForm((p) => ({ ...p, newStatus: e.target.value }))}
+                      className="w-full px-3.5 py-2.5 bg-white border border-aura-dark/20 rounded-xl focus:outline-none focus:border-aura-gold font-semibold text-aura-dark"
+                    >
+                      <option value="Pending Atelier Prep">Pending Atelier Prep (In Workshop)</option>
+                      <option value="Dispatched via Courier">Dispatched via Courier (In Transit with Rider)</option>
+                      <option value="Delivered">Delivered &amp; Authenticated (Client Received)</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
                   </div>
-                  <div className="text-right">
-                    <span className="text-[10px] text-aura-muted uppercase tracking-wider block">Current Status</span>
-                    <span className="inline-block px-2.5 py-0.5 rounded-full bg-aura-gold/20 text-aura-dark font-bold text-[10px] uppercase border border-aura-gold/30">
-                      {statusModalOrder.status}
-                    </span>
-                  </div>
-                </div>
 
-                {/* Target Status Dropdown */}
-                <div>
-                  <label className="font-semibold uppercase tracking-wider block mb-1 text-aura-dark/80">
-                    New Fulfillment Stage *
-                  </label>
-                  <select
-                    value={statusForm.newStatus}
-                    onChange={(e) => setStatusForm((p) => ({ ...p, newStatus: e.target.value }))}
-                    className="w-full px-3.5 py-2.5 bg-white border border-aura-dark/20 rounded-xl focus:outline-none focus:border-aura-gold font-semibold text-aura-dark"
-                  >
-                    <option value="Pending Atelier Prep">Pending Atelier Prep (In Workshop)</option>
-                    <option value="Dispatched via Courier">Dispatched via Courier (In Transit with Rider)</option>
-                    <option value="Delivered">Delivered &amp; Authenticated (Client Received)</option>
-                    <option value="Cancelled">Cancelled</option>
-                  </select>
-                </div>
-
-                {/* Courier Fields (Active when Dispatched is chosen) */}
-                {statusForm.newStatus === 'Dispatched via Courier' && (
-                  <div className="space-y-4 p-4 rounded-2xl bg-blue-500/5 border border-blue-500/20">
-                    <div className="flex items-center gap-2 text-blue-900 font-bold uppercase tracking-wider text-[11px]">
-                      <Truck size={14} className="text-blue-700" />
-                      <span>Courier Partner &amp; Waybill Consignment</span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="font-semibold uppercase tracking-wider block mb-1 text-aura-dark/80">
-                          Courier Partner
-                        </label>
-                        <select
-                          value={statusForm.courier}
-                          onChange={(e) => setStatusForm((p) => ({ ...p, courier: e.target.value }))}
-                          className="w-full px-3.5 py-2 bg-white border border-aura-dark/20 rounded-xl focus:outline-none focus:border-aura-gold"
-                        >
-                          {COURIER_PRESETS.map((c) => (
-                            <option key={c} value={c}>{c}</option>
-                          ))}
-                        </select>
+                  {/* Courier Fields (Active when Dispatched is chosen) */}
+                  {statusForm.newStatus === 'Dispatched via Courier' && (
+                    <div className="space-y-4 p-4 rounded-2xl bg-blue-500/5 border border-blue-500/20">
+                      <div className="flex items-center gap-2 text-blue-900 font-bold uppercase tracking-wider text-[11px]">
+                        <Truck size={14} className="text-blue-700" />
+                        <span>Courier Partner &amp; Waybill Consignment</span>
                       </div>
 
-                      <div>
-                        <label className="font-semibold uppercase tracking-wider block mb-1 text-aura-dark/80">
-                          Tracking / Waybill Code *
-                        </label>
-                        <input
-                          type="text"
-                          required
-                          value={statusForm.trackingNumber}
-                          onChange={(e) => setStatusForm((p) => ({ ...p, trackingNumber: e.target.value }))}
-                          placeholder="e.g. TCS-8492019"
-                          className="w-full px-3.5 py-2 bg-white border border-aura-dark/20 rounded-xl font-mono focus:outline-none focus:border-aura-gold"
-                        />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div>
+                          <label className="font-semibold uppercase tracking-wider block mb-1 text-aura-dark/80">
+                            Courier Partner
+                          </label>
+                          <select
+                            value={statusForm.courier}
+                            onChange={(e) => setStatusForm((p) => ({ ...p, courier: e.target.value }))}
+                            className="w-full px-3.5 py-2 bg-white border border-aura-dark/20 rounded-xl focus:outline-none focus:border-aura-gold"
+                          >
+                            {COURIER_PRESETS.map((c) => (
+                              <option key={c} value={c}>{c}</option>
+                            ))}
+                          </select>
+                        </div>
+
+                        <div>
+                          <label className="font-semibold uppercase tracking-wider block mb-1 text-aura-dark/80">
+                            Tracking / Waybill Code *
+                          </label>
+                          <input
+                            type="text"
+                            required
+                            value={statusForm.trackingNumber}
+                            onChange={(e) => setStatusForm((p) => ({ ...p, trackingNumber: e.target.value }))}
+                            placeholder="e.g. TCS-8492019"
+                            className="w-full px-3.5 py-2 bg-white border border-aura-dark/20 rounded-xl font-mono focus:outline-none focus:border-aura-gold"
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* Concierge Notes */}
-                <div>
-                  <label className="font-semibold uppercase tracking-wider block mb-1 text-aura-dark/80">
-                    Atelier Concierge Notes (Optional)
-                  </label>
-                  <input
-                    type="text"
-                    value={statusForm.notes}
-                    onChange={(e) => setStatusForm((p) => ({ ...p, notes: e.target.value }))}
-                    placeholder="e.g. Steam sanitization complete, packaged in archival cedar box."
-                    className="w-full px-3.5 py-2 bg-white border border-aura-dark/20 rounded-xl focus:outline-none focus:border-aura-gold"
-                  />
+                  {/* Concierge Notes */}
+                  <div>
+                    <label className="font-semibold uppercase tracking-wider block mb-1 text-aura-dark/80">
+                      Atelier Concierge Notes (Optional)
+                    </label>
+                    <input
+                      type="text"
+                      value={statusForm.notes}
+                      onChange={(e) => setStatusForm((p) => ({ ...p, notes: e.target.value }))}
+                      placeholder="e.g. Steam sanitization complete, packaged in archival cedar box."
+                      className="w-full px-3.5 py-2 bg-white border border-aura-dark/20 rounded-xl focus:outline-none focus:border-aura-gold"
+                    />
+                  </div>
+
+                  {/* ─── Real-Time Gmail Dispatch Notice ─── */}
+                  <div className="p-4 rounded-2xl bg-emerald-950/5 border border-emerald-600/25 space-y-2">
+                    <div className="flex items-center gap-2 text-emerald-900 font-bold uppercase tracking-wider text-[11px]">
+                      <Mail size={14} className="text-emerald-700" />
+                      <span>Real-Time Gmail Dispatch Active</span>
+                    </div>
+                    <ul className="text-[11px] text-aura-dark/80 space-y-1 list-disc list-inside">
+                      <li>
+                        Client notification will be emailed to:{' '}
+                        <strong className="text-aura-dark font-mono">{statusModalOrder.client?.email || 'client'}</strong>
+                      </li>
+                      <li>
+                        Store owner confirmation copy will be emailed to:{' '}
+                        <strong className="text-aura-dark font-mono">{OWNER_EMAIL}</strong>
+                      </li>
+                    </ul>
+                  </div>
                 </div>
 
-                {/* ─── Real-Time Gmail Dispatch Notice ─── */}
-                <div className="p-4 rounded-2xl bg-emerald-950/5 border border-emerald-600/25 space-y-2">
-                  <div className="flex items-center gap-2 text-emerald-900 font-bold uppercase tracking-wider text-[11px]">
-                    <Mail size={14} className="text-emerald-700" />
-                    <span>Real-Time Gmail Dispatch Active</span>
-                  </div>
-                  <ul className="text-[11px] text-aura-dark/80 space-y-1 list-disc list-inside">
-                    <li>
-                      Client notification will be emailed to:{' '}
-                      <strong className="text-aura-dark font-mono">{statusModalOrder.client?.email || 'client'}</strong>
-                    </li>
-                    <li>
-                      Store owner confirmation copy will be emailed to:{' '}
-                      <strong className="text-aura-dark font-mono">{OWNER_EMAIL}</strong>
-                    </li>
-                  </ul>
-                </div>
-
-                {/* Modal Buttons */}
-                <div className="flex items-center justify-end gap-3 pt-3 border-t border-aura-dark/10">
+                {/* Pinned Modal Footer */}
+                <div className="shrink-0 flex items-center justify-end gap-3 px-6 py-4 border-t border-aura-dark/10 bg-white/90 backdrop-blur-md">
                   <button
                     type="button"
                     onClick={() => setStatusModalOrder(null)}
@@ -765,24 +794,29 @@ export default function OrdersCRM({ onNotify }) {
       {/* ─── MODAL 2: Order Details & Printable Archival Slip ─── */}
       <AnimatePresence>
         {selectedOrder && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-aura-dark/75 backdrop-blur-sm overflow-y-auto">
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-aura-dark/80 backdrop-blur-sm overflow-hidden"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setSelectedOrder(null)
+            }}
+          >
             <motion.div
               initial={{ opacity: 0, scale: 0.95, y: 15 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 15 }}
-              className="bg-cream-50 rounded-3xl border border-aura-gold/40 shadow-2xl w-full max-w-2xl max-h-[92vh] flex flex-col my-auto overflow-hidden"
+              className="bg-cream-50 rounded-3xl border border-aura-gold/40 shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden relative"
+              onClick={(e) => e.stopPropagation()}
             >
-              {/* Slip Header */}
-              <div className="flex items-center justify-between px-6 py-4 border-b border-aura-dark/10 bg-white/70">
-                <div className="flex items-center gap-3">
-                  <div>
-                    <h3 className="font-serif text-xl text-aura-dark">Archival Acquisition Slip</h3>
-                    <p className="font-sans text-[10px] text-aura-muted uppercase tracking-wider">
-                      Thrift Aura Atelier &bull; Order #{selectedOrder.id}
-                    </p>
-                  </div>
+              {/* Pinned Slip Header */}
+              <div className="shrink-0 flex items-center justify-between px-6 py-4 border-b border-aura-dark/10 bg-white/90 backdrop-blur-md">
+                <div>
+                  <h3 className="font-serif text-xl text-aura-dark">Archival Acquisition Slip</h3>
+                  <p className="font-sans text-[10px] text-aura-muted uppercase tracking-wider">
+                    Thrift Aura Atelier &bull; Order #{selectedOrder.id}
+                  </p>
                 </div>
                 <button
+                  type="button"
                   onClick={() => setSelectedOrder(null)}
                   className="p-1.5 rounded-lg hover:bg-cream-200 text-aura-muted hover:text-aura-dark transition-colors"
                 >
@@ -790,8 +824,8 @@ export default function OrdersCRM({ onNotify }) {
                 </button>
               </div>
 
-              {/* Slip Body */}
-              <div className="overflow-y-auto p-6 space-y-6 text-xs font-sans">
+              {/* Scrollable Slip Body */}
+              <div className="flex-1 overflow-y-auto overscroll-contain p-6 space-y-6 text-xs font-sans">
                 {/* Client & Dispatch Summary */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-white border border-aura-dark/10">
                   <div>
@@ -890,9 +924,10 @@ export default function OrdersCRM({ onNotify }) {
                 </div>
               </div>
 
-              {/* Slip Footer Actions */}
-              <div className="flex items-center justify-between px-6 py-4 border-t border-aura-dark/10 bg-white/70">
+              {/* Pinned Slip Footer Actions */}
+              <div className="shrink-0 flex items-center justify-between px-6 py-4 border-t border-aura-dark/10 bg-white/90 backdrop-blur-md">
                 <button
+                  type="button"
                   onClick={() => window.print()}
                   className="btn-outline py-2 px-4 text-xs inline-flex items-center gap-2"
                 >
@@ -902,6 +937,7 @@ export default function OrdersCRM({ onNotify }) {
 
                 <div className="flex items-center gap-2">
                   <button
+                    type="button"
                     onClick={() => {
                       const o = selectedOrder
                       setSelectedOrder(null)
@@ -913,6 +949,7 @@ export default function OrdersCRM({ onNotify }) {
                     <span>Advance Status</span>
                   </button>
                   <button
+                    type="button"
                     onClick={() => setSelectedOrder(null)}
                     className="py-2 px-4 rounded-xl bg-stone-200 hover:bg-stone-300 text-stone-800 text-xs font-sans font-semibold transition-colors"
                   >
