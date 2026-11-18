@@ -25,22 +25,28 @@ export function AuthProvider({ children }) {
     try {
       const clientSession = JSON.parse(localStorage.getItem('thrift-aura-client-session') || 'null')
       if (clientSession && clientSession.email) {
-        setUser({
-          id: clientSession.id || `cl-${Date.now()}`,
-          email: clientSession.email,
-          user_metadata: {
+        // Check session expiry
+        if (clientSession.expiresAt && clientSession.expiresAt < Date.now()) {
+          localStorage.removeItem('thrift-aura-client-session')
+          // fall through to Supabase check
+        } else {
+          setUser({
+            id: clientSession.id || `cl-${Date.now()}`,
+            email: clientSession.email,
+            user_metadata: {
+              full_name: clientSession.fullName || 'Collector',
+              phone: clientSession.phone || '',
+            },
+            isVerified: true,
+          })
+          setProfile({
+            id: clientSession.id || `cl-${Date.now()}`,
             full_name: clientSession.fullName || 'Collector',
-            phone: clientSession.phone || '',
-          },
-          isVerified: true,
-        })
-        setProfile({
-          id: clientSession.id || `cl-${Date.now()}`,
-          full_name: clientSession.fullName || 'Collector',
-          role: 'client',
-        })
-        setLoading(false)
-        return
+            role: 'client',
+          })
+          setLoading(false)
+          return
+        }
       }
     } catch (e) {
       console.warn('Failed parsing client session', e)
@@ -83,17 +89,25 @@ export function AuthProvider({ children }) {
 
   // ─── Verified Client Session Helpers ───
   function loginVerifiedClient(clientData) {
+    // Try to find existing client record to restore data
+    let existingRecord = null
+    try {
+      const all = JSON.parse(localStorage.getItem('thrift-aura-clients') || '[]')
+      existingRecord = all.find(c => c.email.toLowerCase() === clientData.email.toLowerCase()) || null
+    } catch {}
+
     const client = {
-      id: clientData.id || `cl-${Date.now()}`,
-      email: clientData.email,
-      fullName: clientData.fullName || 'Collector',
-      phone: clientData.phone || '',
+      id: existingRecord?.id || clientData.id || `cl-${Date.now()}`,
+      email: clientData.email.toLowerCase(),
+      fullName: clientData.fullName || existingRecord?.fullName || 'Collector',
+      phone: clientData.phone || existingRecord?.phone || '',
       isVerified: true,
-      verifiedAt: clientData.verifiedAt || new Date().toISOString(),
+      verifiedAt: new Date().toISOString(),
       authMethod: 'gmail_otp',
-      registeredAt: clientData.registeredAt || new Date().toISOString(),
-      ordersCount: clientData.ordersCount || 0,
-      totalSpend: clientData.totalSpend || 0,
+      registeredAt: existingRecord?.registeredAt || clientData.registeredAt || new Date().toISOString(),
+      ordersCount: existingRecord?.ordersCount || clientData.ordersCount || 0,
+      totalSpend: existingRecord?.totalSpend || clientData.totalSpend || 0,
+      expiresAt: Date.now() + 30 * 24 * 60 * 60 * 1000, // 30 days
     }
 
     // Save session
@@ -102,7 +116,7 @@ export function AuthProvider({ children }) {
     // Update global client registry in localStorage
     try {
       const existing = JSON.parse(localStorage.getItem('thrift-aura-clients') || '[]')
-      const index = existing.findIndex((c) => c.email.toLowerCase() === client.email.toLowerCase())
+      const index = existing.findIndex(c => c.email.toLowerCase() === client.email.toLowerCase())
       if (index >= 0) {
         existing[index] = { ...existing[index], ...client }
       } else {
@@ -113,15 +127,7 @@ export function AuthProvider({ children }) {
       console.warn('Failed updating client registry', err)
     }
 
-    setUser({
-      id: client.id,
-      email: client.email,
-      user_metadata: {
-        full_name: client.fullName,
-        phone: client.phone,
-      },
-      isVerified: true,
-    })
+    setUser({ id: client.id, email: client.email, user_metadata: { full_name: client.fullName, phone: client.phone }, isVerified: true })
     setProfile({ id: client.id, full_name: client.fullName, role: 'client' })
   }
 

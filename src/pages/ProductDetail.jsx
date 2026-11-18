@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from 'react-router-dom'
 import { supabase } from '../lib/supabase'
 import { sampleProducts } from '../data/sampleProducts'
 import { useCart } from '../context/CartContext'
+import { useToast } from '../context/ToastContext'
 import ProductCard from '../components/ui/ProductCard'
 import {
   ShoppingBag, ArrowLeft, Heart, ShieldCheck, Sparkles, Truck, RefreshCw, Check,
@@ -14,6 +15,7 @@ export default function ProductDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { addItem } = useCart()
+  const { showToast } = useToast()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -118,6 +120,12 @@ export default function ProductDetail() {
     )
     setAdded(true)
     setTimeout(() => setAdded(false), 2200)
+    showToast({
+      name: product.name,
+      color: activeColor.name,
+      size: selectedSize || 'Standard',
+      image: activeImages[0] || currentImage,
+    })
   }
 
   // Related products

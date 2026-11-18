@@ -289,13 +289,27 @@ export default function Shop() {
         {/* Products Grid */}
         {filteredProducts.length === 0 ? (
           <div className="text-center py-24 glass-card rounded-2xl max-w-lg mx-auto p-12">
-            <h3 className="font-serif text-3xl font-normal text-aura-dark mb-2">No Archives Match</h3>
-            <p className="font-sans text-sm text-aura-muted mb-6">
-              Try adjusting your size, price or category filters to explore more of our collection.
-            </p>
-            <button onClick={clearFilters} className="btn-primary">
-              View All Curations
-            </button>
+            {searchQuery ? (
+              <>
+                <h3 className="font-serif text-3xl font-normal text-aura-dark mb-2">No Results for "{searchQuery}"</h3>
+                <p className="font-sans text-sm text-aura-muted mb-6">
+                  Try a different search term or browse all our archival pieces.
+                </p>
+                <button onClick={() => setSearchQuery('')} className="btn-primary">
+                  Clear Search
+                </button>
+              </>
+            ) : (
+              <>
+                <h3 className="font-serif text-3xl font-normal text-aura-dark mb-2">No Archives Match</h3>
+                <p className="font-sans text-sm text-aura-muted mb-6">
+                  Try adjusting your size, price or category filters to explore more of our collection.
+                </p>
+                <button onClick={clearFilters} className="btn-primary">
+                  View All Curations
+                </button>
+              </>
+            )}
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-x-6 gap-y-12">

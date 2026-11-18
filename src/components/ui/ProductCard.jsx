@@ -2,13 +2,14 @@ import { useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ShoppingBag, Heart, Check, ChevronLeft, ChevronRight } from 'lucide-react'
 import { useCart } from '../../context/CartContext'
+import { useToast } from '../../context/ToastContext'
+import { useWishlist } from '../../context/WishlistContext'
 import { motion, AnimatePresence } from 'framer-motion'
 
 export default function ProductCard({ product }) {
   const cardRef = useRef(null)
   const [tilt, setTilt] = useState({ x: 0, y: 0 })
   const [isHovered, setIsHovered] = useState(false)
-  const [liked, setLiked] = useState(false)
   const [added, setAdded] = useState(false)
 
   // Color & Angle State
@@ -29,6 +30,9 @@ export default function ProductCard({ product }) {
   const displayImage = currentImages[activeAngleIdx] || currentImages[0] || 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?w=700&h=950&fit=crop&q=85'
 
   const { addItem } = useCart()
+  const { showToast } = useToast()
+  const { toggleWishlist, isWishlisted } = useWishlist()
+  const liked = isWishlisted(product.id)
 
   const handleMouseMove = (e) => {
     const card = cardRef.current
@@ -76,12 +80,18 @@ export default function ProductCard({ product }) {
     )
     setAdded(true)
     setTimeout(() => setAdded(false), 1800)
+    showToast({
+      name: product.name,
+      color: activeColor.name,
+      size: product.sizes?.[0] || 'Standard',
+      image: currentImages[0] || displayImage,
+    })
   }
 
   const handleLike = (e) => {
     e.preventDefault()
     e.stopPropagation()
-    setLiked(!liked)
+    toggleWishlist(product.id)
   }
 
   const discount = product.original_price && product.original_price > product.price

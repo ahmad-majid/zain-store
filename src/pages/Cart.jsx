@@ -195,9 +195,9 @@ export default function Cart() {
     // Trigger Real-Time Gmail Notifications (Client Confirmation + Store Owner Alert)
     sendOrderConfirmationEmails(newOrder)
 
-    setConfirmedOrder(newOrder)
-    setCheckoutOpen(false)
     clearCart()
+    setCheckoutOpen(false)
+    navigate(`/order-confirmed/${orderId}`)
   }
 
   const copyOrderId = () => {
@@ -404,16 +404,31 @@ export default function Cart() {
   if (items.length === 0) {
     return (
       <main className="min-h-screen pt-36 pb-20 px-6 flex flex-col items-center justify-center text-center relative z-10">
-        <div className="w-16 h-16 rounded-full bg-cream-200 flex items-center justify-center text-aura-muted mb-6">
-          <ShoppingBag size={28} />
-        </div>
-        <h2 className="font-serif text-3xl text-aura-dark mb-2">Your Bag is Empty</h2>
-        <p className="font-sans text-sm text-aura-muted mb-8 max-w-sm">
-          Discover one-of-a-kind vintage tailoring and archival luxury in our latest collection.
-        </p>
-        <Link to="/shop" className="btn-primary">
-          Explore The Collection
-        </Link>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="max-w-sm"
+        >
+          <div className="w-20 h-20 rounded-full bg-aura-gold/10 border border-aura-gold/30 flex items-center justify-center mx-auto mb-6">
+            <ShoppingBag size={32} className="text-aura-gold" />
+          </div>
+          <span className="font-sans text-[11px] uppercase tracking-[0.3em] text-aura-gold font-semibold block mb-2">Your Bag</span>
+          <h2 className="font-serif text-4xl text-aura-dark mb-3">Your Archival Bag is Empty</h2>
+          <p className="font-sans text-sm text-aura-dark/60 leading-relaxed mb-8">
+            Discover our curated selection of vintage and archival fashion pieces, each one authenticated and ready for a new chapter.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <Link to="/shop" className="btn-primary inline-flex items-center justify-center gap-2">
+              <span>Browse Archival Collection</span>
+              <ArrowRight size={15} />
+            </Link>
+            {user && (
+              <Link to="/my-orders" className="py-3 px-6 border border-aura-dark/20 text-aura-dark hover:border-aura-dark rounded-xl text-xs font-sans tracking-wider uppercase font-semibold transition-all inline-flex items-center gap-2">
+                My Orders
+              </Link>
+            )}
+          </div>
+        </motion.div>
       </main>
     )
   }
