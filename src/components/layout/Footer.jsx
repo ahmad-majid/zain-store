@@ -9,11 +9,21 @@ export default function Footer() {
   const handleSubscribe = (e) => {
     e.preventDefault()
     if (!email) return
+    try {
+      const existing = JSON.parse(localStorage.getItem('thrift-aura-subscribers') || '[]')
+      const cleanEmail = email.trim().toLowerCase()
+      if (!existing.includes(cleanEmail)) {
+        existing.unshift(cleanEmail)
+        localStorage.setItem('thrift-aura-subscribers', JSON.stringify(existing))
+      }
+    } catch (err) {
+      console.warn('Failed saving subscriber', err)
+    }
     setSubscribed(true)
     setTimeout(() => {
       setSubscribed(false)
       setEmail('')
-    }, 4000)
+    }, 4500)
   }
 
   const shopLinks = [
@@ -26,6 +36,7 @@ export default function Footer() {
   ]
 
   const infoLinks = [
+    { label: 'Track Courier & Dispatch', to: '/track' },
     { label: 'About Our Atelier', to: '/about' },
     { label: 'Circular Sustainability', to: '/sustainability' },
     { label: 'Sizing & Condition Guide', to: '/sizing-guide' },

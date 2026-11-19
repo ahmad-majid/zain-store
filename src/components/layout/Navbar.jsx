@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { ShoppingBag, User, Menu, X, LogOut, Search, Flame, Heart, Package, ChevronDown } from 'lucide-react'
+import { ShoppingBag, User, Menu, X, LogOut, Search, Flame, Heart, Package, ChevronDown, Truck } from 'lucide-react'
 import { useCart } from '../../context/CartContext'
 import { useAuth } from '../../context/AuthContext'
 import { useStoreSettings } from '../../context/StoreSettingsContext'
@@ -145,6 +145,11 @@ export default function Navbar() {
                           >
                             <Package size={14} className="text-aura-gold" /> My Orders
                           </Link>
+                          <Link to="/track"
+                            className="flex items-center gap-2.5 px-4 py-3 font-sans text-xs text-aura-dark hover:bg-cream-100 transition-colors font-medium border-t border-aura-dark/5"
+                          >
+                            <Truck size={14} className="text-aura-gold" /> Track Courier
+                          </Link>
                           <Link to="/wishlist"
                             className="flex items-center gap-2.5 px-4 py-3 font-sans text-xs text-aura-dark hover:bg-cream-100 transition-colors font-medium border-t border-aura-dark/5"
                           >
@@ -223,6 +228,9 @@ export default function Navbar() {
                 <div className="w-full h-px bg-aura-dark/10 my-2" />
                 <Link to="/my-orders" className="font-sans text-sm font-semibold text-aura-dark hover:text-aura-gold transition-colors flex items-center gap-2">
                   <Package size={16} /> My Orders
+                </Link>
+                <Link to="/track" className="font-sans text-sm font-semibold text-aura-dark hover:text-aura-gold transition-colors flex items-center gap-2">
+                  <Truck size={16} /> Track Courier
                 </Link>
                 <Link to="/wishlist" className="font-sans text-sm font-semibold text-aura-dark hover:text-aura-gold transition-colors flex items-center gap-2">
                   <Heart size={16} /> My Wishlist

@@ -5,10 +5,11 @@ import { useStoreSettings } from '../context/StoreSettingsContext'
 import OrdersCRM from '../components/admin/OrdersCRM'
 import ClientsCRM from '../components/admin/ClientsCRM'
 import PromotionsCRM from '../components/admin/PromotionsCRM'
+import AnalyticsCRM from '../components/admin/AnalyticsCRM'
 import {
   Package, Megaphone, Sparkles, Navigation, Percent, Image, FolderTree, BookOpen,
   Plus, Trash2, Edit3, Save, RotateCcw, Check, Upload, ExternalLink, Video, Eye,
-  CheckCircle2, Flame, Tag, Layers, X, ChevronDown, ShoppingBag, Users, Mail
+  CheckCircle2, Flame, Tag, Layers, X, ChevronDown, ShoppingBag, Users, Mail, BarChart3
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -379,6 +380,7 @@ export default function Admin() {
             { id: 'orders', label: 'Client Orders', icon: ShoppingBag },
             { id: 'clients', label: 'Client Records', icon: Users },
             { id: 'promotions', label: 'Promotions & Broadcast', icon: Mail },
+            { id: 'analytics', label: 'Analytics & Revenue', icon: BarChart3 },
             { id: 'inventory', label: 'Archival Products', icon: Package, count: products.length },
             { id: 'announcement', label: 'Announcement Bar', icon: Megaphone, badge: settings.announcement?.enabled ? 'ON' : 'OFF' },
             { id: 'hero', label: 'Hero Showcase', icon: Sparkles },
@@ -436,6 +438,10 @@ export default function Admin() {
             targetEmail={targetPromoEmail}
             onNotify={showSaveSuccess}
           />
+        )}
+
+        {activeTab === 'analytics' && (
+          <AnalyticsCRM />
         )}
 
         {/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•

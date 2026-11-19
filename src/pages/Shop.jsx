@@ -7,6 +7,16 @@ import { motion, AnimatePresence } from 'framer-motion'
 
 const CONDITIONS = ['All', 'Like New', 'Excellent', 'Good']
 const SIZES = ['All', 'XS', 'S', 'M', 'L', 'XL']
+const COLOR_PRESETS = [
+  { name: 'All', hex: '' },
+  { name: 'Oatmeal', hex: '#E6D7C3' },
+  { name: 'Black', hex: '#1C1C1C' },
+  { name: 'Charcoal', hex: '#3E3E3E' },
+  { name: 'Brown', hex: '#5A3825' },
+  { name: 'Camel', hex: '#C19A6B' },
+  { name: 'Navy', hex: '#1B263B' },
+  { name: 'Olive', hex: '#556B2F' },
+]
 const SORT_OPTIONS = [
   { label: 'Curated (Newest)', value: 'newest' },
   { label: 'Price: Low to High', value: 'price_asc' },
@@ -29,6 +39,7 @@ export default function Shop() {
   }, [searchParams])
   const [selectedCondition, setSelectedCondition] = useState('All')
   const [selectedSize, setSelectedSize] = useState('All')
+  const [selectedColor, setSelectedColor] = useState('All')
   const [maxPrice, setMaxPrice] = useState(25000)
   const [sortBy, setSortBy] = useState('newest')
 
@@ -48,6 +59,13 @@ export default function Shop() {
       if (selectedSize !== 'All' && (!p.sizes || !p.sizes.includes(selectedSize))) {
         return false
       }
+      // Color
+      if (selectedColor !== 'All') {
+        const match = p.colors?.some((c) =>
+          c.name?.toLowerCase().includes(selectedColor.toLowerCase())
+        )
+        if (!match) return false
+      }
       // Price
       if (Number(p.price) > maxPrice) {
         return false
@@ -65,7 +83,7 @@ export default function Shop() {
       if (sortBy === 'price_desc') return Number(b.price) - Number(a.price)
       return 0
     })
-  }, [products, selectedCategory, selectedCondition, selectedSize, maxPrice, searchQuery, sortBy])
+  }, [products, selectedCategory, selectedCondition, selectedSize, selectedColor, maxPrice, searchQuery, sortBy])
 
   const categories = [
     { label: 'All Silhouettes', value: 'all' },
@@ -75,12 +93,14 @@ export default function Shop() {
   const activeFilterCount = (selectedCategory !== 'all' ? 1 : 0) +
     (selectedCondition !== 'All' ? 1 : 0) +
     (selectedSize !== 'All' ? 1 : 0) +
+    (selectedColor !== 'All' ? 1 : 0) +
     (maxPrice < 25000 ? 1 : 0)
 
   const clearFilters = () => {
     setSelectedCategory('all')
     setSelectedCondition('All')
     setSelectedSize('All')
+    setSelectedColor('All')
     setMaxPrice(25000)
     setSearchQuery('')
     setSearchParams({})
@@ -189,7 +209,7 @@ export default function Shop() {
               exit={{ opacity: 0, height: 0 }}
               className="overflow-hidden mb-10"
             >
-              <div className="glass-card p-6 md:p-8 rounded-2xl border border-aura-gold/20 grid grid-cols-1 md:grid-cols-3 gap-8">
+              <div className="glass-card p-6 md:p-8 rounded-2xl border border-aura-gold/20 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
                 {/* Condition */}
                 <div>
                   <h4 className="font-sans text-[11px] uppercase tracking-widest text-aura-muted mb-3 font-semibold">
@@ -230,6 +250,32 @@ export default function Shop() {
                   </div>
                 </div>
 
+                {/* Color Palette */}
+                <div>
+                  <h4 className="font-sans text-[11px] uppercase tracking-widest text-aura-muted mb-3 font-semibold">
+                    Colorway Palette
+                  </h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {COLOR_PRESETS.map((col) => (
+                      <button
+                        key={col.name}
+                        onClick={() => setSelectedColor(col.name)}
+                        className={`chip text-[11px] rounded-md flex items-center gap-1.5 ${
+                          selectedColor === col.name ? 'active' : ''
+                        }`}
+                      >
+                        {col.hex && (
+                          <span
+                            style={{ backgroundColor: col.hex }}
+                            className="w-2.5 h-2.5 rounded-full border border-black/25 shrink-0"
+                          />
+                        )}
+                        <span>{col.name}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 {/* Price Slider */}
                 <div>
                   <div className="flex justify-between items-center mb-3">
@@ -256,7 +302,7 @@ export default function Shop() {
                 </div>
 
                 {activeFilterCount > 0 && (
-                  <div className="md:col-span-3 flex justify-end pt-2 border-t border-aura-dark/10">
+                  <div className="sm:col-span-2 md:col-span-4 flex justify-end pt-2 border-t border-aura-dark/10">
                     <button
                       onClick={clearFilters}
                       className="inline-flex items-center gap-1.5 text-xs font-sans text-aura-warm hover:text-aura-dark font-medium underline"

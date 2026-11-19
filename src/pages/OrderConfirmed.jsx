@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
 import { motion } from 'framer-motion'
-import { CheckCircle2, Package, Truck, ArrowRight, Mail, Copy, Check } from 'lucide-react'
+import { CheckCircle2, Package, Truck, ArrowRight, Mail, Copy, Check, Printer, Sparkles } from 'lucide-react'
 
 export default function OrderConfirmed() {
   const { orderId } = useParams()
@@ -176,6 +176,32 @@ export default function OrderConfirmed() {
                 <p className="font-semibold text-aura-dark mt-2 font-mono text-base">Rs. {Number(order.total).toLocaleString()}</p>
               </div>
             </div>
+
+            {order.giftNote && (
+              <div className="p-4 rounded-2xl bg-aura-gold/10 border border-aura-gold/25 text-xs font-sans">
+                <span className="font-semibold uppercase tracking-wider text-[10px] text-aura-gold flex items-center gap-1.5 mb-1">
+                  <Sparkles size={12} /> Handwritten Wax-Sealed Gift Note
+                </span>
+                <p className="italic text-aura-dark font-serif text-sm">"{order.giftNote}"</p>
+              </div>
+            )}
+          </div>
+
+          <div className="px-6 py-4 bg-cream-50/80 border-t border-aura-dark/10 flex items-center justify-between text-xs font-sans">
+            <button
+              onClick={() => window.print()}
+              className="text-aura-dark hover:text-aura-gold font-semibold uppercase tracking-wider flex items-center gap-1.5"
+            >
+              <Printer size={13} />
+              <span>Print Official Acquisition Slip</span>
+            </button>
+            <Link
+              to={`/track/${order.id}`}
+              className="text-aura-gold hover:text-aura-dark font-semibold uppercase tracking-wider flex items-center gap-1"
+            >
+              <Truck size={13} />
+              <span>Live Courier Tracking</span>
+            </Link>
           </div>
         </motion.div>
 
@@ -184,8 +210,11 @@ export default function OrderConfirmed() {
           initial={{ opacity: 0, y: 15 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
           className="flex flex-col sm:flex-row gap-4"
         >
-          <Link to="/my-orders" className="flex-1 py-3.5 border-2 border-aura-dark text-aura-dark hover:bg-aura-dark hover:text-cream-100 rounded-xl text-xs font-sans tracking-wider uppercase font-semibold transition-all flex items-center justify-center gap-2">
-            <Package size={15} /> View All My Orders
+          <Link to={`/track/${order.id}`} className="flex-1 py-3.5 bg-aura-dark text-cream-100 hover:bg-aura-gold hover:text-aura-dark rounded-xl text-xs font-sans tracking-wider uppercase font-semibold transition-all flex items-center justify-center gap-2 shadow-md">
+            <Truck size={15} /> Track Courier Dispatch
+          </Link>
+          <Link to="/my-orders" className="flex-1 py-3.5 border-2 border-aura-dark text-aura-dark hover:bg-cream-100 rounded-xl text-xs font-sans tracking-wider uppercase font-semibold transition-all flex items-center justify-center gap-2">
+            <Package size={15} /> My Orders
           </Link>
           <Link to="/shop" className="flex-1 btn-primary flex items-center justify-center gap-2">
             <span>Continue Shopping</span> <ArrowRight size={15} />

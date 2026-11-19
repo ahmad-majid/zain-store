@@ -26,6 +26,7 @@ import PrivacyTerms from './pages/PrivacyTerms'
 import MyOrders from './pages/MyOrders'
 import OrderConfirmed from './pages/OrderConfirmed'
 import Wishlist from './pages/Wishlist'
+import TrackOrder from './pages/TrackOrder'
 import NotFound from './pages/NotFound'
 import WhatsAppConcierge from './components/ui/WhatsAppConcierge'
 import './index.css'
@@ -67,6 +68,8 @@ function App() {
                   <Route path="/terms" element={<PrivacyTerms />} />
                   <Route path="/my-orders" element={<MyOrders />} />
                   <Route path="/order-confirmed/:orderId" element={<OrderConfirmed />} />
+                  <Route path="/track" element={<TrackOrder />} />
+                  <Route path="/track/:orderId" element={<TrackOrder />} />
                   <Route path="/wishlist" element={<Wishlist />} />
                   <Route path="*" element={<NotFound />} />
                 </Routes>

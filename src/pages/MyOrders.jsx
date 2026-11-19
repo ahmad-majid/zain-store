@@ -53,8 +53,11 @@ function OrderCard({ order }) {
           </div>
         </div>
         <div className="flex items-center gap-3 sm:flex-col sm:items-end">
-          <Link to="/returns" className="text-[11px] font-sans text-aura-muted hover:text-aura-dark underline flex items-center gap-1">
-            <RotateCcw size={11} /> Return / Exchange
+          <Link
+            to={`/track/${order.id}`}
+            className="text-[11px] font-sans font-semibold text-aura-gold hover:text-aura-dark flex items-center gap-1 uppercase tracking-wider"
+          >
+            <Truck size={12} /> Track Courier
           </Link>
           <button
             onClick={() => setExpanded(!expanded)}
@@ -84,7 +87,7 @@ function OrderCard({ order }) {
             </div>
           </div>
 
-          {/* Delivery */}
+          {/* Delivery & Notes */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <p className="font-semibold uppercase tracking-[0.15em] text-[10px] text-aura-gold mb-1">Delivering To</p>
@@ -100,6 +103,28 @@ function OrderCard({ order }) {
               {order.couponCode && <p className="text-emerald-700 mt-1">Coupon: {order.couponCode}</p>}
               <p className="font-semibold text-aura-dark mt-1 font-mono">Total: Rs. {Number(order.total).toLocaleString()}</p>
             </div>
+          </div>
+
+          {order.giftNote && (
+            <div className="p-3.5 rounded-xl bg-aura-gold/10 border border-aura-gold/25">
+              <span className="font-semibold uppercase tracking-wider text-[10px] text-aura-gold block mb-1">
+                Handwritten Wax-Sealed Gift Note
+              </span>
+              <p className="italic text-aura-dark font-serif text-sm">"{order.giftNote}"</p>
+            </div>
+          )}
+
+          <div className="flex items-center justify-between pt-3 border-t border-aura-dark/10">
+            <button
+              onClick={() => window.print()}
+              className="btn-outline py-2 px-4 text-xs flex items-center gap-1.5"
+            >
+              <Printer size={13} />
+              <span>Print Archival Slip</span>
+            </button>
+            <Link to="/returns" className="text-aura-muted hover:text-aura-dark underline flex items-center gap-1">
+              <RotateCcw size={11} /> Return / Exchange Policy
+            </Link>
           </div>
         </div>
       )}

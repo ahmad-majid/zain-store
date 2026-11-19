@@ -137,6 +137,10 @@ export default function ProductCard({ product }) {
             <span className="glass-card text-aura-dark text-[9px] font-sans font-semibold tracking-widest uppercase px-2 py-0.5 rounded-sm shadow-sm">
               {product.condition}
             </span>
+            <span className="bg-aura-gold/90 text-aura-dark text-[9px] font-sans font-bold tracking-widest uppercase px-2 py-0.5 rounded-sm shadow-sm flex items-center gap-1">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
+              1 of 1
+            </span>
           </div>
 
           {/* Top Right Wishlist Button */}

@@ -36,6 +36,7 @@ export default function Cart() {
     address: '',
     city: '',
     notes: '',
+    giftNote: '',
     paymentMethod: 'cod', // cod | card
   })
   const setField = (k, v) => setForm((p) => ({ ...p, [k]: v }))
@@ -149,6 +150,7 @@ export default function Cart() {
       shipping,
       total: finalTotal,
       status: 'Pending Atelier Prep',
+      giftNote: form.giftNote || null,
     }
 
     // Persist to localStorage for CRM & Returns Order Lookup integration
@@ -763,6 +765,24 @@ export default function Cart() {
                         className="w-full px-3.5 py-2.5 bg-white border border-aura-dark/15 rounded-xl focus:outline-none focus:border-aura-gold"
                       />
                     </div>
+                  </div>
+
+                  {/* Handwritten Atelier Gift Note */}
+                  <div className="p-3.5 rounded-xl bg-aura-gold/5 border border-aura-gold/25 space-y-2">
+                    <label className="font-semibold uppercase tracking-wider block text-aura-dark flex items-center gap-1.5 text-[10px]">
+                      <Sparkles size={11} className="text-aura-gold" />
+                      Handwritten Wax-Sealed Gift Note (Complimentary)
+                    </label>
+                    <input
+                      type="text"
+                      value={form.giftNote}
+                      onChange={(e) => setField('giftNote', e.target.value)}
+                      placeholder="e.g. For Elena with deepest admiration — from Julian"
+                      className="w-full px-3.5 py-2 bg-white border border-aura-dark/15 rounded-lg text-xs focus:outline-none focus:border-aura-gold"
+                    />
+                    <p className="text-[10px] text-aura-muted italic">
+                      Our calligrapher will hand-transcribe your message on deckle-edged vintage cotton parchment.
+                    </p>
                   </div>
                 </div>
 

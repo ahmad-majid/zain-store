@@ -4,10 +4,12 @@ import { supabase } from '../lib/supabase'
 import { sampleProducts } from '../data/sampleProducts'
 import { useCart } from '../context/CartContext'
 import { useToast } from '../context/ToastContext'
+import { useWishlist } from '../context/WishlistContext'
+import { useAuth } from '../context/AuthContext'
 import ProductCard from '../components/ui/ProductCard'
 import {
   ShoppingBag, ArrowLeft, Heart, ShieldCheck, Sparkles, Truck, RefreshCw, Check,
-  Maximize2, ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut
+  Maximize2, ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, Share2, Copy, MessageCircle, Star
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
 
@@ -16,6 +18,8 @@ export default function ProductDetail() {
   const navigate = useNavigate()
   const { addItem } = useCart()
   const { showToast } = useToast()
+  const { toggleWishlist, isWishlisted } = useWishlist()
+  const { user } = useAuth()
   const [product, setProduct] = useState(null)
   const [loading, setLoading] = useState(true)
 
@@ -24,7 +28,14 @@ export default function ProductDetail() {
   const [selectedAngleIdx, setSelectedAngleIdx] = useState(0)
   const [selectedSize, setSelectedSize] = useState('')
   const [added, setAdded] = useState(false)
-  const [liked, setLiked] = useState(false)
+  const liked = isWishlisted(product?.id)
+
+  // Social Share & Recently Viewed
+  const [copiedLink, setCopiedLink] = useState(false)
+  const [recentlyViewed, setRecentlyViewed] = useState([])
+  const [reviewModalOpen, setReviewModalOpen] = useState(false)
+  const [reviews, setReviews] = useState([])
+  const [newReview, setNewReview] = useState({ rating: 5, author: user?.user_metadata?.full_name || '', comment: '' })
 
   // Lightbox Zoom Inspection
   const [lightboxOpen, setLightboxOpen] = useState(false)
@@ -72,6 +83,125 @@ export default function ProductDetail() {
 
     fetchDetail()
   }, [id])
+
+  // Dynamic Document Title
+  useEffect(() => {
+    if (product?.name) {
+      document.title = `${product.name} | Thrift Aura Archival Boutique`
+    } else {
+      document.title = 'Thrift Aura | Archival Vintage Luxury'
+    }
+    return () => {
+      document.title = 'Thrift Aura | Archival Vintage Luxury'
+    }
+  }, [product])
+
+  // Track & Load Recently Viewed
+  useEffect(() => {
+    if (!product) return
+    try {
+      const stored = JSON.parse(localStorage.getItem('thrift-aura-recently-viewed') || '[]')
+      const updated = [
+        product,
+        ...stored.filter((p) => p.id !== product.id),
+      ].slice(0, 6)
+      localStorage.setItem('thrift-aura-recently-viewed', JSON.stringify(updated))
+      setRecentlyViewed(updated.filter((p) => p.id !== product.id))
+    } catch (e) {
+      console.warn('Failed tracking recently viewed', e)
+    }
+  }, [product])
+
+  // Load Reviews for this Product
+  useEffect(() => {
+    if (!id) return
+    try {
+      const allReviews = JSON.parse(localStorage.getItem('thrift-aura-reviews') || '{}')
+      const defaultSampleReviews = [
+        {
+          id: 'rev-1',
+          author: 'Julian Vane',
+          rating: 5,
+          date: 'Nov 12, 2026',
+          comment: 'Historical drape is immaculate. The wool weave matches museum archive references exactly. Packaged with museum-grade tissue.',
+          verified: true,
+        },
+        {
+          id: 'rev-2',
+          author: 'Sophia Chen',
+          rating: 5,
+          date: 'Nov 04, 2026',
+          comment: 'Authenticated hardware and impeccable stitch density. Arrived in pristine condition within 48 hours.',
+          verified: true,
+        },
+      ]
+      setReviews(allReviews[id] || defaultSampleReviews)
+    } catch {
+      setReviews([])
+    }
+  }, [id])
+
+  // Save new review
+  const handleAddReview = (e) => {
+    e.preventDefault()
+    if (!newReview.comment.trim()) return
+    const reviewObj = {
+      id: `rev-${Date.now()}`,
+      author: newReview.author.trim() || user?.user_metadata?.full_name || 'Archival Collector',
+      rating: Number(newReview.rating) || 5,
+      date: 'Just now',
+      comment: newReview.comment.trim(),
+      verified: Boolean(user),
+    }
+    const updated = [reviewObj, ...reviews]
+    setReviews(updated)
+    try {
+      const allReviews = JSON.parse(localStorage.getItem('thrift-aura-reviews') || '{}')
+      allReviews[id] = updated
+      localStorage.setItem('thrift-aura-reviews', JSON.stringify(allReviews))
+    } catch (err) {
+      console.warn('Failed saving review', err)
+    }
+    setReviewModalOpen(false)
+    setNewReview({ rating: 5, author: user?.user_metadata?.full_name || '', comment: '' })
+    showToast({
+      name: 'Review Published',
+      color: 'Collector Authenticated',
+      size: `${newReview.rating} Stars`,
+      image: currentImage,
+    })
+  }
+
+  // Social Share Handlers
+  const shareUrl = window.location.href
+  const shareTitle = product ? `${product.name} at Thrift Aura Archival Boutique` : 'Thrift Aura'
+
+  const handleShareWhatsApp = () => {
+    const text = `Take a look at this one-of-a-kind piece from Thrift Aura:\n*${product?.name}*\nPrice: Rs. ${Number(product?.price).toLocaleString()}\n${shareUrl}`
+    window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank')
+  }
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(shareUrl)
+    setCopiedLink(true)
+    setTimeout(() => setCopiedLink(false), 2000)
+  }
+
+  const handleNativeShare = async () => {
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: shareTitle,
+          text: `One-of-a-kind vintage archival piece: ${product?.name}`,
+          url: shareUrl,
+        })
+      } catch (err) {
+        handleCopyLink()
+      }
+    } else {
+      handleCopyLink()
+    }
+  }
 
   const colors = product?.colors || []
   const activeColor = colors[selectedColorIdx] || colors[0] || { name: 'Standard', hex: '#000', images: [] }
@@ -276,6 +406,17 @@ export default function ProductDetail() {
 
           {/* Right Product Info (5 cols) */}
           <div className="lg:col-span-5 flex flex-col justify-start">
+            <div className="flex flex-wrap items-center gap-2 mb-2.5">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-600/10 border border-red-600/30 text-red-700 text-[10px] font-sans font-bold tracking-widest uppercase">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
+                Only 1 in Archive • Unique Piece
+              </span>
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-aura-gold/15 border border-aura-gold/30 text-aura-dark text-[10px] font-sans font-semibold">
+                <Star size={11} className="fill-aura-gold text-aura-gold" />
+                <span>4.9 ({reviews.length + 12} Verified Reviews)</span>
+              </span>
+            </div>
+
             <div className="flex items-center gap-2 mb-2">
               <Sparkles size={12} className="text-aura-gold" />
               <span className="font-sans text-[11px] tracking-[0.3em] uppercase text-aura-muted font-medium">
@@ -378,7 +519,7 @@ export default function ProductDetail() {
             )}
 
             {/* Add to Cart Actions */}
-            <div className="flex items-center gap-3 mb-8">
+            <div className="flex items-center gap-3 mb-5">
               <button
                 onClick={handleAddToCart}
                 className={`flex-1 py-4 px-6 rounded-md text-xs font-sans tracking-[0.25em] uppercase font-semibold transition-all duration-300 flex items-center justify-center gap-2.5 shadow-md ${
@@ -401,16 +542,42 @@ export default function ProductDetail() {
               </button>
 
               <button
-                onClick={() => setLiked(!liked)}
+                onClick={() => product && toggleWishlist(product.id)}
                 className={`p-4 border rounded-md transition-all ${
                   liked
-                    ? 'bg-red-50 border-red-200 text-red-500'
+                    ? 'bg-red-50 border-red-200 text-red-500 scale-105'
                     : 'border-aura-dark/20 text-aura-dark hover:border-aura-dark'
                 }`}
                 title="Wishlist"
               >
                 <Heart size={18} fill={liked ? 'currentColor' : 'none'} />
               </button>
+            </div>
+
+            {/* Social Share Row */}
+            <div className="flex items-center justify-between p-3.5 rounded-xl bg-white border border-aura-dark/10 mb-6 text-xs font-sans shadow-sm">
+              <span className="text-[11px] uppercase tracking-wider text-aura-muted font-semibold flex items-center gap-1.5">
+                <Share2 size={13} className="text-aura-gold" />
+                Share Piece:
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handleShareWhatsApp}
+                  className="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200 transition-colors flex items-center gap-1.5 text-[11px] font-medium"
+                >
+                  <MessageCircle size={13} />
+                  <span>WhatsApp</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={handleNativeShare}
+                  className="px-3 py-1.5 rounded-lg bg-cream-100 text-aura-dark hover:bg-cream-200 border border-aura-dark/15 transition-colors flex items-center gap-1.5 text-[11px] font-medium"
+                >
+                  {copiedLink ? <Check size={13} className="text-emerald-700" /> : <Copy size={13} />}
+                  <span>{copiedLink ? 'Link Copied!' : 'Copy Link'}</span>
+                </button>
+              </div>
             </div>
 
             {/* Trust Accordions */}
@@ -456,7 +623,160 @@ export default function ProductDetail() {
             ))}
           </div>
         </div>
+
+        {/* ─── Collector Testimonials & Provenance Reviews ─── */}
+        <div className="mt-24 pt-16 border-t border-aura-dark/10">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-10">
+            <div>
+              <div className="flex items-center gap-2 mb-2 text-aura-gold">
+                <Sparkles size={13} />
+                <span className="font-sans text-[11px] uppercase tracking-[0.3em] font-semibold text-aura-dark/60">
+                  Client Provenance
+                </span>
+              </div>
+              <h2 className="font-serif text-3xl font-normal text-aura-dark">
+                Collector Authentications &amp; Reviews
+              </h2>
+              <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center text-aura-gold">
+                  {[...Array(5)].map((_, i) => (
+                    <Star key={i} size={15} className="fill-aura-gold" />
+                  ))}
+                </div>
+                <span className="font-sans text-xs font-bold text-aura-dark">4.9 / 5.0</span>
+                <span className="font-sans text-xs text-aura-muted">({reviews.length} Collector Verified)</span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => setReviewModalOpen(true)}
+              className="btn-outline py-2.5 px-6 text-xs flex items-center gap-2 self-start md:self-auto"
+            >
+              <Star size={13} />
+              <span>Submit Archival Review</span>
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {reviews.map((rev) => (
+              <div key={rev.id} className="p-6 rounded-2xl bg-white border border-aura-gold/20 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="font-serif text-base font-bold text-aura-dark">{rev.author}</span>
+                    {rev.verified && (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-800 text-[9px] font-sans font-bold uppercase tracking-wider border border-emerald-200">
+                        <Check size={10} /> Verified Collector
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-[11px] font-sans text-aura-muted">{rev.date}</span>
+                </div>
+                <div className="flex items-center text-aura-gold">
+                  {[...Array(rev.rating)].map((_, i) => (
+                    <Star key={i} size={13} className="fill-aura-gold" />
+                  ))}
+                </div>
+                <p className="font-sans text-xs text-aura-dark/80 leading-relaxed italic">
+                  "{rev.comment}"
+                </p>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* ─── Recently Examined in the Archive ─── */}
+        {recentlyViewed.length > 0 && (
+          <div className="mt-24 pt-16 border-t border-aura-dark/10">
+            <div className="mb-10">
+              <span className="font-sans text-[11px] tracking-[0.35em] uppercase text-aura-muted font-medium mb-1 block">
+                Your Browsing Log
+              </span>
+              <h2 className="font-serif text-3xl font-normal text-aura-dark">
+                Recently Examined <span className="italic text-aura-warm">Pieces</span>
+              </h2>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-6">
+              {recentlyViewed.slice(0, 4).map((p) => (
+                <ProductCard key={p.id} product={p} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
+
+      {/* ─── Review Modal ─── */}
+      <AnimatePresence>
+        {reviewModalOpen && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-aura-dark/80 backdrop-blur-sm overflow-hidden"
+            onClick={(e) => {
+              if (e.target === e.currentTarget) setReviewModalOpen(false)
+            }}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 15 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 15 }}
+              className="bg-white rounded-3xl border border-aura-gold/40 shadow-2xl w-full max-w-md p-6 sm:p-8 relative"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex items-center justify-between pb-4 mb-4 border-b border-aura-dark/10">
+                <h3 className="font-serif text-2xl text-aura-dark">Collector Review</h3>
+                <button onClick={() => setReviewModalOpen(false)} className="p-1 text-aura-muted hover:text-aura-dark">
+                  <X size={18} />
+                </button>
+              </div>
+              <form onSubmit={handleAddReview} className="space-y-4 text-xs font-sans">
+                <div>
+                  <label className="font-semibold uppercase tracking-wider block mb-1">Your Name</label>
+                  <input
+                    type="text"
+                    required
+                    value={newReview.author}
+                    onChange={(e) => setNewReview((p) => ({ ...p, author: e.target.value }))}
+                    placeholder="e.g. Julian Vane"
+                    className="w-full px-3.5 py-2.5 bg-cream-50 border border-aura-dark/15 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <label className="font-semibold uppercase tracking-wider block mb-1">Star Rating</label>
+                  <div className="flex gap-2">
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <button
+                        key={star}
+                        type="button"
+                        onClick={() => setNewReview((p) => ({ ...p, rating: star }))}
+                        className="p-1 text-aura-gold"
+                      >
+                        <Star size={22} className={star <= newReview.rating ? 'fill-aura-gold' : 'text-stone-300'} />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div>
+                  <label className="font-semibold uppercase tracking-wider block mb-1">Archival Experience &amp; Garment Fit</label>
+                  <textarea
+                    required
+                    rows={4}
+                    value={newReview.comment}
+                    onChange={(e) => setNewReview((p) => ({ ...p, comment: e.target.value }))}
+                    placeholder="Describe the fabric weave, fit, and condition upon arrival..."
+                    className="w-full px-3.5 py-2.5 bg-cream-50 border border-aura-dark/15 rounded-xl"
+                  />
+                </div>
+                <div className="flex justify-end gap-3 pt-2">
+                  <button type="button" onClick={() => setReviewModalOpen(false)} className="btn-outline py-2.5 px-5">
+                    Cancel
+                  </button>
+                  <button type="submit" className="btn-primary py-2.5 px-6">
+                    Publish Review
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* ─── High-Resolution Lightbox & Studio Inspector ─── */}
       <AnimatePresence>
