@@ -101,9 +101,10 @@ export function AuthProvider({ children }) {
       email: clientData.email.toLowerCase(),
       fullName: clientData.fullName || existingRecord?.fullName || 'Collector',
       phone: clientData.phone || existingRecord?.phone || '',
+      password: clientData.password || existingRecord?.password || '',
       isVerified: true,
       verifiedAt: new Date().toISOString(),
-      authMethod: 'gmail_otp',
+      authMethod: clientData.password ? 'password_and_otp' : 'gmail_otp',
       registeredAt: existingRecord?.registeredAt || clientData.registeredAt || new Date().toISOString(),
       ordersCount: existingRecord?.ordersCount || clientData.ordersCount || 0,
       totalSpend: existingRecord?.totalSpend || clientData.totalSpend || 0,
@@ -140,7 +141,29 @@ export function AuthProvider({ children }) {
   }
 
   async function signIn(email, password) {
-    return supabase.auth.signInWithPassword({ email, password })
+    const cleanEmail = email.trim().toLowerCase()
+
+    // 1️⃣ Check registered clients in localStorage
+    try {
+      const clients = JSON.parse(localStorage.getItem('thrift-aura-clients') || '[]')
+      const localMatch = clients.find(
+        (c) => c.email.toLowerCase() === cleanEmail && c.password === password
+      )
+      if (localMatch) {
+        loginVerifiedClient(localMatch)
+        return { data: { user: localMatch }, error: null }
+      }
+    } catch (e) {
+      console.warn('Failed local client password check', e)
+    }
+
+    // 2️⃣ Check Supabase auth / master credentials
+    try {
+      const res = await supabase.auth.signInWithPassword({ email: cleanEmail, password })
+      return res
+    } catch (err) {
+      return { data: { user: null }, error: err }
+    }
   }
 
   async function signOut() {

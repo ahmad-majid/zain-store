@@ -4,7 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import { motion } from 'framer-motion'
 import {
   Package, ShieldCheck, ArrowRight, ChevronDown, ChevronUp,
-  RotateCcw, Clock, Truck, CheckCircle2, Sparkles, LogIn
+  RotateCcw, Clock, Truck, CheckCircle2, Sparkles, LogIn, Printer
 } from 'lucide-react'
 
 const STATUS_CONFIG = {
