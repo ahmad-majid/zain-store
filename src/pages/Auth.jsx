@@ -150,7 +150,11 @@ export default function Auth() {
     if (err) {
       setError(err.message || 'Invalid email or password. You may also click "Sign in with One-Time Gmail Code" below.')
     } else {
-      navigate(redirectUrl, { replace: true })
+      if (cleanEmail === 'admin@thriftaura.com' || cleanEmail === 'u06626982@gmail.com') {
+        navigate('/admin', { replace: true })
+      } else {
+        navigate(redirectUrl, { replace: true })
+      }
     }
   }
 

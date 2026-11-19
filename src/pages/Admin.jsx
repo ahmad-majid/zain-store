@@ -64,12 +64,12 @@ export default function Admin() {
     }
   }, [productModal, couponModal, campaignModal, lookbookModal, categoryModal])
 
-  // â”€â”€ Product form state (fully controlled, supports N colorways Ã— 4 images) â”€â”€
+  // ─── Product form state (fully controlled, supports N colorways × 4 images) ───
   const BLANK_COLOR = () => ({ name: '', hex: '#b8860b', images: ['', '', '', ''] })
   const BLANK_PRODUCT_FORM = {
     name: '', description: '', price: '', original_price: '',
     condition: 'Like New', category_id: '', sizes: 'XS, S, M, L, XL',
-    featured: false, colors: [BLANK_COLOR()],
+    stock: 1, featured: false, colors: [BLANK_COLOR()],
   }
   const [productForm, setProductForm] = useState(BLANK_PRODUCT_FORM)
   const [activeColorIdx, setActiveColorIdx] = useState(0)
@@ -91,6 +91,7 @@ export default function Admin() {
       condition: p.condition || 'Like New',
       category_id: p.category_id || '',
       sizes: p.sizes?.join(', ') || 'XS, S, M, L, XL',
+      stock: p.stock ?? 1,
       featured: p.featured || false,
       colors: p.colors?.length
         ? p.colors.map((c) => ({
@@ -149,6 +150,7 @@ export default function Admin() {
       description: pf.description.trim(),
       price: parseFloat(pf.price),
       original_price: pf.original_price ? parseFloat(pf.original_price) : null,
+      stock: pf.stock !== '' ? Math.max(0, parseInt(pf.stock, 10) || 0) : 1,
       condition: pf.condition,
       sizes: pf.sizes.split(',').map((s) => s.trim()).filter(Boolean),
       featured: pf.featured,
@@ -473,6 +475,7 @@ export default function Admin() {
                     <th className="py-4 px-6">Garment</th>
                     <th className="py-4 px-6">Department</th>
                     <th className="py-4 px-6">Price</th>
+                    <th className="py-4 px-6">Stock / Units</th>
                     <th className="py-4 px-6">Condition</th>
                     <th className="py-4 px-6">Colorways</th>
                     <th className="py-4 px-6 text-right">Actions</th>
@@ -481,6 +484,7 @@ export default function Admin() {
                 <tbody className="divide-y divide-aura-dark/5">
                   {products.map((p) => {
                     const firstImg = p.colors?.[0]?.images?.[0] || p.images?.[0]
+                    const pStock = typeof p.stock === 'number' ? p.stock : 1
                     return (
                       <tr key={p.id} className="hover:bg-cream-200/40 transition-colors">
                         <td className="py-3 px-6">
@@ -513,6 +517,17 @@ export default function Admin() {
                         </td>
                         <td className="py-3 px-6 font-semibold text-aura-dark">
                           Rs. {Number(p.price).toLocaleString()}
+                        </td>
+                        <td className="py-3 px-6">
+                          <span className={`px-2.5 py-1 rounded-md text-[10px] font-mono font-semibold uppercase tracking-wider inline-flex items-center gap-1 border ${
+                            pStock === 0
+                              ? 'bg-red-50 text-red-700 border-red-200'
+                              : pStock === 1
+                              ? 'bg-amber-50 text-amber-800 border-amber-200'
+                              : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                          }`}>
+                            {pStock === 0 ? 'Sold Out' : pStock === 1 ? '1 of 1' : `${pStock} units`}
+                          </span>
                         </td>
                         <td className="py-3 px-6">
                           <span className="px-2 py-0.5 rounded-sm bg-aura-gold/20 text-aura-dark text-[10px] font-semibold">
@@ -1609,7 +1624,21 @@ export default function Admin() {
                       </div>
                     </div>
 
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <label className="font-semibold uppercase tracking-wider block mb-1.5 text-aura-dark/80">
+                          Stock Quantity <span className="text-red-500">*</span>
+                        </label>
+                        <input
+                          type="number"
+                          min="0"
+                          value={productForm.stock}
+                          onChange={(e) => setPF('stock', e.target.value)}
+                          placeholder="1"
+                          className="w-full px-3.5 py-2.5 bg-cream-50 border border-aura-dark/15 rounded-lg focus:outline-none focus:border-aura-gold transition-colors font-mono font-medium"
+                        />
+                        <span className="text-[10px] text-aura-muted mt-0.5 block leading-tight">1 for unique, 2+ for batch</span>
+                      </div>
                       <div>
                         <label className="font-semibold uppercase tracking-wider block mb-1.5 text-aura-dark/80">Department</label>
                         <select

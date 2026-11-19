@@ -27,6 +27,7 @@ export default function ProductDetail() {
   const [selectedColorIdx, setSelectedColorIdx] = useState(0)
   const [selectedAngleIdx, setSelectedAngleIdx] = useState(0)
   const [selectedSize, setSelectedSize] = useState('')
+  const [selectedQuantity, setSelectedQuantity] = useState(1)
   const [added, setAdded] = useState(false)
   const liked = isWishlisted(product?.id)
 
@@ -44,7 +45,17 @@ export default function ProductDetail() {
   useEffect(() => {
     async function fetchDetail() {
       setLoading(true)
-      const localMatch = sampleProducts.find((p) => p.id === id)
+      setSelectedQuantity(1)
+
+      // Check stored custom products from Admin CRM first, then sampleProducts
+      let localMatch = null
+      try {
+        const storedProducts = JSON.parse(localStorage.getItem('thrift-aura-products') || '[]')
+        localMatch = storedProducts.find((p) => p.id === id)
+      } catch {}
+      if (!localMatch) {
+        localMatch = sampleProducts.find((p) => p.id === id)
+      }
 
       try {
         const { data, error } = await supabase
@@ -239,19 +250,24 @@ export default function ProductDetail() {
     { label: 'Styled Silhouette', idx: 3 },
   ]
 
+  const productStock = typeof product?.stock === 'number' ? product.stock : 1
+  const isSoldOut = productStock <= 0
+
   const handleAddToCart = () => {
-    if (!product) return
+    if (!product || isSoldOut) return
+    const qtyToAdd = Math.min(productStock, Math.max(1, selectedQuantity))
     addItem(
       {
         ...product,
         selectedColor: activeColor.name,
       },
-      selectedSize || 'Standard'
+      selectedSize || 'Standard',
+      qtyToAdd
     )
     setAdded(true)
     setTimeout(() => setAdded(false), 2200)
     showToast({
-      name: product.name,
+      name: qtyToAdd > 1 ? `${product.name} (×${qtyToAdd})` : product.name,
       color: activeColor.name,
       size: selectedSize || 'Standard',
       image: activeImages[0] || currentImage,
@@ -407,10 +423,22 @@ export default function ProductDetail() {
           {/* Right Product Info (5 cols) */}
           <div className="lg:col-span-5 flex flex-col justify-start">
             <div className="flex flex-wrap items-center gap-2 mb-2.5">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-600/10 border border-red-600/30 text-red-700 text-[10px] font-sans font-bold tracking-widest uppercase">
-                <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
-                Only 1 in Archive • Unique Piece
-              </span>
+              {isSoldOut ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-stone-200 border border-stone-300 text-stone-700 text-[10px] font-sans font-bold tracking-widest uppercase">
+                  <span className="w-1.5 h-1.5 rounded-full bg-stone-500" />
+                  Archival Piece Sold Out / In Vault
+                </span>
+              ) : productStock === 1 ? (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-red-600/10 border border-red-600/30 text-red-700 text-[10px] font-sans font-bold tracking-widest uppercase">
+                  <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
+                  Only 1 in Archive • Unique Piece
+                </span>
+              ) : (
+                <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-emerald-600/10 border border-emerald-600/30 text-emerald-800 text-[10px] font-sans font-bold tracking-widest uppercase">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
+                  {productStock} Available in Archive Stock
+                </span>
+              )}
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-aura-gold/15 border border-aura-gold/30 text-aura-dark text-[10px] font-sans font-semibold">
                 <Star size={11} className="fill-aura-gold text-aura-gold" />
                 <span>4.9 ({reviews.length + 12} Verified Reviews)</span>
@@ -518,25 +546,77 @@ export default function ProductDetail() {
               </div>
             )}
 
+            {/* Quantity Selector */}
+            {!isSoldOut && (
+              <div className="flex items-center justify-between mb-5 p-3.5 rounded-xl bg-cream-100/70 border border-aura-dark/10">
+                <div className="flex flex-col">
+                  <span className="font-sans text-[11px] uppercase tracking-wider text-aura-dark font-semibold">
+                    Acquisition Quantity
+                  </span>
+                  <span className="font-sans text-[10px] text-aura-muted">
+                    {productStock > 1 ? `${productStock} curated units available in current archive stock` : 'Rare 1-of-1 singular archival acquisition'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2">
+                  {productStock > 1 ? (
+                    <div className="inline-flex items-center border border-aura-dark/20 rounded-lg bg-white overflow-hidden shadow-xs">
+                      <button
+                        type="button"
+                        onClick={() => setSelectedQuantity((q) => Math.max(1, q - 1))}
+                        disabled={selectedQuantity <= 1}
+                        className="w-8 h-8 flex items-center justify-center text-aura-dark hover:bg-cream-100 transition-colors disabled:opacity-30 font-mono text-sm font-bold"
+                        aria-label="Decrease quantity"
+                      >
+                        -
+                      </button>
+                      <span className="px-3 font-mono text-xs font-bold text-aura-dark min-w-[32px] text-center">
+                        {selectedQuantity}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setSelectedQuantity((q) => Math.min(productStock, q + 1))}
+                        disabled={selectedQuantity >= productStock}
+                        className="w-8 h-8 flex items-center justify-center text-aura-dark hover:bg-cream-100 transition-colors disabled:opacity-30 font-mono text-sm font-bold"
+                        aria-label="Increase quantity"
+                      >
+                        +
+                      </button>
+                    </div>
+                  ) : (
+                    <span className="px-3 py-1 rounded-md bg-white border border-aura-dark/15 font-mono text-xs font-bold text-aura-dark shadow-xs">
+                      1 Piece (1 of 1)
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Add to Cart Actions */}
             <div className="flex items-center gap-3 mb-5">
               <button
                 onClick={handleAddToCart}
+                disabled={isSoldOut}
                 className={`flex-1 py-4 px-6 rounded-md text-xs font-sans tracking-[0.25em] uppercase font-semibold transition-all duration-300 flex items-center justify-center gap-2.5 shadow-md ${
-                  added
+                  isSoldOut
+                    ? 'bg-stone-300 text-stone-500 cursor-not-allowed'
+                    : added
                     ? 'bg-aura-gold text-aura-dark'
                     : 'bg-aura-dark text-cream-100 hover:bg-aura-gold hover:text-aura-dark'
                 }`}
               >
-                {added ? (
+                {isSoldOut ? (
+                  <span>Archival Piece Sold Out</span>
+                ) : added ? (
                   <>
                     <Check size={16} />
-                    <span>Added ({activeColor.name})</span>
+                    <span>Added {selectedQuantity > 1 ? `(${selectedQuantity}× ${activeColor.name})` : `(${activeColor.name})`}</span>
                   </>
                 ) : (
                   <>
                     <ShoppingBag size={16} />
-                    <span>Add to Bag • 1 Available</span>
+                    <span>
+                      Add to Bag • {productStock > 1 ? `${selectedQuantity} of ${productStock} Available` : '1 Available'}
+                    </span>
                   </>
                 )}
               </button>

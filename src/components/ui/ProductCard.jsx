@@ -137,10 +137,21 @@ export default function ProductCard({ product }) {
             <span className="glass-card text-aura-dark text-[9px] font-sans font-semibold tracking-widest uppercase px-2 py-0.5 rounded-sm shadow-sm">
               {product.condition}
             </span>
-            <span className="bg-aura-gold/90 text-aura-dark text-[9px] font-sans font-bold tracking-widest uppercase px-2 py-0.5 rounded-sm shadow-sm flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
-              1 of 1
-            </span>
+            {product.stock === 0 ? (
+              <span className="bg-stone-800 text-stone-200 text-[9px] font-sans font-bold tracking-widest uppercase px-2 py-0.5 rounded-sm shadow-sm flex items-center gap-1">
+                Sold Out
+              </span>
+            ) : product.stock > 1 ? (
+              <span className="bg-emerald-800/90 text-emerald-100 text-[9px] font-sans font-bold tracking-widest uppercase px-2 py-0.5 rounded-sm shadow-sm flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+                {product.stock} in stock
+              </span>
+            ) : (
+              <span className="bg-aura-gold/90 text-aura-dark text-[9px] font-sans font-bold tracking-widest uppercase px-2 py-0.5 rounded-sm shadow-sm flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
+                1 of 1
+              </span>
+            )}
           </div>
 
           {/* Top Right Wishlist Button */}

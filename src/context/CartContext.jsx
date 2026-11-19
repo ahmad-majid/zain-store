@@ -12,18 +12,19 @@ export function CartProvider({ children }) {
     localStorage.setItem('thrift-aura-cart', JSON.stringify(items))
   }, [items])
 
-  function addItem(product, size) {
+  function addItem(product, size, qty = 1) {
+    const addCount = Number(qty) > 0 ? Number(qty) : 1
     setItems(prev => {
       const key = `${product.id}-${size}`
       const existing = prev.find(i => `${i.id}-${i.selectedSize}` === key)
       if (existing) {
         return prev.map(i =>
           `${i.id}-${i.selectedSize}` === key
-            ? { ...i, quantity: i.quantity + 1 }
+            ? { ...i, quantity: i.quantity + addCount }
             : i
         )
       }
-      return [...prev, { ...product, selectedSize: size, quantity: 1 }]
+      return [...prev, { ...product, selectedSize: size, quantity: addCount }]
     })
   }
 

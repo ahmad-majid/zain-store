@@ -143,6 +143,23 @@ export function AuthProvider({ children }) {
   async function signIn(email, password) {
     const cleanEmail = email.trim().toLowerCase()
 
+    // 0️⃣ Master Admin credentials (instant local verification, no external network request)
+    const MASTER_EMAIL = 'admin@thriftaura.com'
+    const OWNER_EMAIL = 'u06626982@gmail.com'
+    const MASTER_PASSWORD = 'ThriftAura@2026'
+
+    if ((cleanEmail === MASTER_EMAIL || cleanEmail === OWNER_EMAIL) && password === MASTER_PASSWORD) {
+      localStorage.setItem('thrift-aura-admin-session', 'master')
+      const adminUser = {
+        id: 'master-admin',
+        email: cleanEmail,
+        user_metadata: { full_name: 'Store Curator' },
+      }
+      setUser(adminUser)
+      setProfile({ id: 'master-admin', full_name: 'Store Curator', role: 'admin' })
+      return { data: { user: adminUser }, error: null }
+    }
+
     // 1️⃣ Check registered clients in localStorage
     try {
       const clients = JSON.parse(localStorage.getItem('thrift-aura-clients') || '[]')
@@ -157,12 +174,39 @@ export function AuthProvider({ children }) {
       console.warn('Failed local client password check', e)
     }
 
-    // 2️⃣ Check Supabase auth / master credentials
-    try {
-      const res = await supabase.auth.signInWithPassword({ email: cleanEmail, password })
-      return res
-    } catch (err) {
-      return { data: { user: null }, error: err }
+    // 2️⃣ Pre-seeded demo collector account fallback
+    if (cleanEmail === 'collector@gmail.com' && password === 'Collector@2026') {
+      const demoClient = {
+        id: 'cl-89421',
+        fullName: 'Elena Rostova',
+        email: 'collector@gmail.com',
+        phone: '+92 300 8472910',
+        password: 'Collector@2026',
+        address: 'House 42, Street 11, Sector F-7/2',
+        city: 'Islamabad',
+        isVerified: true,
+        ordersCount: 2,
+        totalSpend: 24500,
+      }
+      loginVerifiedClient(demoClient)
+      return { data: { user: demoClient }, error: null }
+    }
+
+    // 3️⃣ Only query Supabase auth if real (non-placeholder) credentials are configured
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || ''
+    if (supabaseUrl && !supabaseUrl.includes('placeholder')) {
+      try {
+        const res = await supabase.auth.signInWithPassword({ email: cleanEmail, password })
+        return res
+      } catch (err) {
+        return { data: { user: null }, error: err }
+      }
+    }
+
+    // Offline / local fallback error message
+    return {
+      data: { user: null },
+      error: new Error('Invalid email or password. Please verify your credentials or click "Sign in with One-Time Gmail Code".')
     }
   }
 
