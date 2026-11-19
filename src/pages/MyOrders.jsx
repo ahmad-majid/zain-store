@@ -4,7 +4,8 @@ import { useAuth } from '../context/AuthContext'
 import { motion } from 'framer-motion'
 import {
   Package, ShieldCheck, ArrowRight, ChevronDown, ChevronUp,
-  RotateCcw, Clock, Truck, CheckCircle2, Sparkles, LogIn, Printer
+  RotateCcw, Clock, Truck, CheckCircle2, Sparkles, LogIn, Printer,
+  Copy, Check, Hash
 } from 'lucide-react'
 
 const STATUS_CONFIG = {
@@ -17,6 +18,15 @@ const STATUS_CONFIG = {
 
 function OrderCard({ order }) {
   const [expanded, setExpanded] = useState(false)
+  const [copied, setCopied] = useState(false)
+
+  const handleCopyId = (e) => {
+    e.stopPropagation()
+    navigator.clipboard.writeText(order.id)
+    setCopied(true)
+    setTimeout(() => setCopied(false), 2000)
+  }
+
   const statusCfg = STATUS_CONFIG[order.status] || { color: 'text-aura-muted bg-cream-100 border-cream-200', label: order.status }
   const dateFormatted = new Date(order.createdAt).toLocaleDateString('en-US', {
     year: 'numeric', month: 'short', day: 'numeric'
@@ -33,37 +43,53 @@ function OrderCard({ order }) {
     >
       {/* Card Header */}
       <div className="p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div className="flex items-center gap-4">
-          <img src={itemImg} alt={firstItem?.name} className="w-14 h-16 rounded-xl object-cover border border-aura-dark/10 shrink-0" />
-          <div>
+        <div className="flex items-start sm:items-center gap-4">
+          <img src={itemImg} alt={firstItem?.name} className="w-16 h-20 rounded-xl object-cover border border-aura-dark/10 shrink-0 shadow-xs" />
+          <div className="space-y-1">
             <div className="flex items-center gap-2 flex-wrap mb-1">
-              <span className="font-mono text-sm font-bold text-aura-dark">{order.id}</span>
-              <span className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full border font-sans ${statusCfg.color}`}>
+              <div className="inline-flex items-center gap-1.5 bg-cream-100/90 border border-aura-gold/30 rounded-lg px-2.5 py-1 shadow-xs">
+                <span className="font-sans text-[10px] uppercase font-bold tracking-wider text-aura-gold">Order #</span>
+                <span className="font-mono text-sm font-bold text-aura-dark tracking-wide">{order.id}</span>
+                <button
+                  onClick={handleCopyId}
+                  type="button"
+                  title="Copy Order ID"
+                  className="text-aura-muted hover:text-aura-dark transition-colors p-0.5 ml-0.5 rounded hover:bg-white"
+                >
+                  {copied ? <Check size={12} className="text-emerald-600" /> : <Copy size={12} />}
+                </button>
+              </div>
+              <span className={`text-[10px] font-semibold uppercase tracking-wider px-2.5 py-1 rounded-full border font-sans ${statusCfg.color}`}>
                 {statusCfg.label}
               </span>
             </div>
-            <p className="font-sans text-xs text-aura-muted">{dateFormatted}</p>
-            <p className="font-sans text-xs text-aura-dark/70 mt-0.5">
-              {order.items?.length} piece{order.items?.length !== 1 ? 's' : ''} ·{' '}
-              <span className="font-semibold text-aura-dark">Rs. {Number(order.total).toLocaleString()}</span>
+            <p className="font-sans text-xs text-aura-muted flex items-center gap-1.5">
+              <Clock size={12} className="text-aura-gold/80" />
+              <span>Placed on {dateFormatted}</span>
+            </p>
+            <p className="font-sans text-xs text-aura-dark/80">
+              <span className="font-medium">{order.items?.length} piece{order.items?.length !== 1 ? 's' : ''}</span> ·{' '}
+              <span className="font-semibold text-aura-dark font-mono">Rs. {Number(order.total).toLocaleString()}</span>
             </p>
             {firstItem && (
-              <p className="font-sans text-xs text-aura-muted mt-0.5 italic line-clamp-1">{firstItem.name}</p>
+              <p className="font-sans text-xs text-aura-muted italic line-clamp-1">
+                {firstItem.name} {order.items?.length > 1 && `+ ${order.items.length - 1} more`}
+              </p>
             )}
           </div>
         </div>
-        <div className="flex items-center gap-3 sm:flex-col sm:items-end">
+        <div className="flex items-center gap-3 sm:flex-col sm:items-end shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-aura-dark/10">
           <Link
             to={`/track/${order.id}`}
-            className="text-[11px] font-sans font-semibold text-aura-gold hover:text-aura-dark flex items-center gap-1 uppercase tracking-wider"
+            className="text-xs font-sans font-semibold text-aura-gold hover:text-aura-dark flex items-center gap-1.5 uppercase tracking-wider bg-aura-gold/10 hover:bg-aura-gold/20 px-3 py-1.5 rounded-lg border border-aura-gold/25 transition-colors"
           >
-            <Truck size={12} /> Track Courier
+            <Truck size={13} /> Track Courier
           </Link>
           <button
             onClick={() => setExpanded(!expanded)}
-            className="flex items-center gap-1.5 text-[11px] font-semibold text-aura-dark hover:text-aura-gold transition-colors font-sans uppercase tracking-wider"
+            className="flex items-center gap-1.5 text-xs font-semibold text-aura-dark hover:text-aura-gold transition-colors font-sans uppercase tracking-wider py-1 px-2"
           >
-            {expanded ? 'Hide' : 'View Slip'} {expanded ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+            {expanded ? 'Hide Details' : 'View Slip'} {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
           </button>
         </div>
       </div>
@@ -71,6 +97,28 @@ function OrderCard({ order }) {
       {/* Expanded Detail */}
       {expanded && (
         <div className="border-t border-aura-dark/10 p-5 bg-cream-50/60 space-y-4 text-xs font-sans">
+          {/* Order Header Summary Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-3 p-3.5 bg-white rounded-xl border border-aura-gold/25 shadow-xs">
+            <div>
+              <span className="text-[10px] uppercase font-bold tracking-[0.15em] text-aura-gold block">Official Order Reference / ID</span>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="font-mono text-base font-bold text-aura-dark">#{order.id}</span>
+                <button
+                  onClick={handleCopyId}
+                  type="button"
+                  className="text-[11px] font-sans font-normal text-aura-muted hover:text-aura-dark underline flex items-center gap-1"
+                >
+                  {copied ? <span className="text-emerald-700 flex items-center gap-1 font-medium"><Check size={11} /> Copied</span> : <span className="flex items-center gap-1"><Copy size={11} /> Copy ID</span>}
+                </button>
+              </div>
+            </div>
+            <div className="text-left sm:text-right">
+              <span className="text-[10px] uppercase font-bold tracking-[0.15em] text-aura-gold block">Atelier Order Status</span>
+              <span className={`inline-block text-[10px] font-semibold uppercase tracking-wider px-2.5 py-0.5 rounded-full border font-sans mt-0.5 ${statusCfg.color}`}>
+                {order.status}
+              </span>
+            </div>
+          </div>
           {/* Items */}
           <div>
             <p className="font-semibold uppercase tracking-[0.15em] text-[10px] text-aura-gold mb-2">Order Items</p>
