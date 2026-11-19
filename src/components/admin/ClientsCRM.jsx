@@ -23,8 +23,9 @@ export default function ClientsCRM({ onSelectClientForPromo, onNotify }) {
           {
             id: 'cl-89421',
             fullName: 'Elena Rostova',
-            email: 'u06626982@gmail.com',
+            email: 'collector@gmail.com',
             phone: '+92 300 8472910',
+            password: 'Collector@2026',
             address: 'House 42, Street 11, Sector F-7/2',
             city: 'Islamabad',
             isVerified: true,
